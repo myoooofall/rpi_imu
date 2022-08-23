@@ -22,6 +22,7 @@ public:
         RealTime,
         Table
     };
+    
     enum PlanType {
         X,
         Y,
@@ -31,16 +32,19 @@ public:
     bool debug_flag = true;
     double CaseX = 0.0;//debug
     double CaseY = 0.0;
+
+    //control rate
     double dt = 0.002; //s
+
     //for Table mode
     vector<float> accTable;
     vector<float> velTable;
     vector<float> posTable;
     
     //para
-    const double a_max = 20000;
-    const double v_max = 3000;
-    const double d_max = 20000; //mm/s
+    double a_max = 20000;
+    double v_max = 3000;
+    double d_max = 20000; //mm/s
     
     //Input
     double x1;

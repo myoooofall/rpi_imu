@@ -14,7 +14,6 @@ int main(){
 	test.v0_y = 500;
 	test.v1_y = 0;
     pause();
-    
-    
-	return 0 ;
+	return 0;
+
 }

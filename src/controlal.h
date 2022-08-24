@@ -14,11 +14,7 @@
 #include <unistd.h>
 
 using namespace std;
-
-class controlal{
-public:
-
-    enum Mode {
+enum Mode {
         RealTime,
         Table
     };
@@ -28,6 +24,14 @@ public:
         Y,
         ROTATE
     };
+class controlal{
+public:
+
+    Mode control_mode = RealTime;
+    controlal(Mode _mode){
+        control_mode = _mode;
+    }
+    enum {targetOPS = 500};
     //debug module
     bool debug_flag = true;
     double CaseX = 0.0;//debug

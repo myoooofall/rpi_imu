@@ -13,44 +13,77 @@ void controlal::control_init(){
 
 void controlal::local_planner_thread_func(){ 
 
-    ofstream out_txt_file;
-	if(debug_flag){
-		
-		cout<<"a"<<endl;
-		out_txt_file.open("/home/pi/Desktop/data2.txt",ios::out | ios::trunc);
-		out_txt_file << fixed;
 
-	}
+	if(control_mode == RealTime){
 
-    while(fabs(x1)>v0_x*dt | fabs(y1)>v_max*dt | fabs(v0_x)>a_max*dt | fabs(v0_y)>a_max*dt){
-
-		const auto start {now()};
-        compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
-        traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
-        traj_time_dec_y,traj_time_flat_y,RealTime,dt);
-		
-        
+		ofstream out_txt_file;
 		if(debug_flag){
+			
+			cout<<"a"<<endl;
+			out_txt_file.open("/home/pi/Desktop/data2.txt",ios::out | ios::trunc);
+			out_txt_file << fixed;
 
-			out_txt_file<< setprecision(0)<< a[0];
-			out_txt_file<< '\t';
-			out_txt_file<< setw(10)<< setprecision(0)<<a[1];
-			out_txt_file<< setw(10)<< setprecision(1)<<v0_x;
-			out_txt_file<< setw(10)<< setprecision(1)<<v0_y;
-			out_txt_file<< setw(10)<< setprecision(2)<<x1;
-			out_txt_file<< setw(10)<< setprecision(2)<<y1;
-			out_txt_file<< '\n';
 		}
 
-		const std::intmax_t targetOPS = 500;
-		std::chrono::duration<double, std::ratio<1, targetOPS>> timeBetweenOperation(1);
-        std::this_thread::sleep_until(start+ timeBetweenOperation);
-		// const auto end {now()};
-		// std::chrono::duration<double, std::milli> elapsed {end- start};
-    	// std::cout << "Waited " << elapsed.count() << " ms\n";
+		while(fabs(x1)>v0_x*dt | fabs(y1)>v_max*dt | fabs(v0_x)>a_max*dt | fabs(v0_y)>a_max*dt){
+
+			const auto start {now()};
+			compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
+			traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
+			traj_time_dec_y,traj_time_flat_y,control_mode,dt);
+			
+			
+			if(debug_flag){
+
+				out_txt_file<< setprecision(0)<< a[0];
+				out_txt_file<< '\t';
+				out_txt_file<< setw(10)<< setprecision(0)<<a[1];
+				out_txt_file<< setw(10)<< setprecision(1)<<v0_x;
+				out_txt_file<< setw(10)<< setprecision(1)<<v0_y;
+				out_txt_file<< setw(10)<< setprecision(2)<<x1;
+				out_txt_file<< setw(10)<< setprecision(2)<<y1;
+				out_txt_file<< '\n';
+			}
+
+			// const std::intmax_t targetOPS = 500;
+			std::chrono::duration<double, std::ratio<1, targetOPS>> timeBetweenOperation(1);
+			std::this_thread::sleep_until(start+ timeBetweenOperation);
+			// const auto end {now()};
+			// std::chrono::duration<double, std::milli> elapsed {end- start};
+			// std::cout << "Waited " << elapsed.count() << " ms\n";
+
+		}
+		if(debug_flag) out_txt_file<<endl;
+	}
+
+	else{
+
+		compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
+		traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
+		traj_time_dec_y,traj_time_flat_y,control_mode,dt);
+
+		if(debug_flag){
+			cout << "accTabel:" << endl;
+			for (int i = 0; i < accTable.size(); i++ )
+			{
+				cout << accTable[i] << " ";
+			}
+
+			cout<<endl;
+			cout << endl << "velTable:" << endl;
+			for ( int i = 0; i < velTable.size(); i++ )
+			{
+				cout << velTable[i] << " ";
+			}
+			cout <<endl << "posTable:" << endl;
+			for ( int i = 0; i < posTable.size(); i++ )
+			{
+				cout << posTable[i] << " ";
+			}
+			cout << endl;
+			}
 
 	}
-      if(debug_flag) out_txt_file<<endl;
 
 }
 

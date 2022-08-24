@@ -5,7 +5,7 @@ using namespace std;
 
 int main(){
     
-    controlal test;
+    controlal test(RealTime);
     test.control_init();
     test.x1 = 8000;
 	test.v0_x = 3000;
@@ -14,6 +14,6 @@ int main(){
 	test.v0_y = 500;
 	test.v1_y = 0;
     pause();
-	return 0;
+	return 0; 
 
 }

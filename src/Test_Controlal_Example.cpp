@@ -8,12 +8,12 @@ int main(){
     controlal test(RealTime);
     test.control_init();
     test.x1 = 8000;
-	test.v0_x = 3000;
-	test.v1_x = 0;
+    test.v0_x = 3000;
+    test.v1_x = 0;
     test.y1 = 3000; 
-	test.v0_y = 500;
-	test.v1_y = 0;
+    test.v0_y = 500;
+    test.v1_y = 0;
     pause();
-	return 0; 
+    return 0; 
 
 }

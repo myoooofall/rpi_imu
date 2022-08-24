@@ -17,13 +17,13 @@ using namespace std;
 enum Mode {
         RealTime,
         Table
-    };
+};
     
-    enum PlanType {
+enum PlanType {
         X,
         Y,
         ROTATE
-    };
+};
 class controlal{
 public:
 

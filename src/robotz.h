@@ -1,16 +1,18 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#include "main.h"
+#include "interface.h"
+#include "wifiz.h"
 // #include "controlal.h"
 
 #ifdef ROCKPIS_VERSION
-    #include "i2c_sntest.h"
-    #include "other_gpio.h"
+    #include "i2c_deviceROCKS.h"
+    #include "other_gpioROCKS.h"
 #elif defined(CM4_VERSION)
-    #include "i2c_sntestCM4.h"
+    #include "i2c_deviceCM4.h"
     #include "other_gpioCM4.h"
 #endif
+
 class robotz {
 public:
     robotz(int motor_num=4);
@@ -22,6 +24,7 @@ public:
 
     other_gpio gpio_test;
     // controlal bangbang;
+    void testmode_on();
 
     // uint8_t Robot_Is_Infrared;      //红外触发
     // uint8_t Robot_Is_Boot_charged;  //电容充电到60V

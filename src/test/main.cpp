@@ -1,5 +1,6 @@
-#include "main.h"
+#include "interface.h"
 #include "robotz.h"
+#include "wifiz.h"
 
 int vel_pack[4] = {0,0,0,0};
 
@@ -16,6 +17,7 @@ int main() {
     
     // Robot Init
     robotz zjunlict;
+    // zjunlict.testmode_on();
     zjunlict.motor.detect();
     // TODO: wait for robot udp init
     while ( !Received_packet )

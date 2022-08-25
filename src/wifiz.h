@@ -1,9 +1,9 @@
 #ifndef WIFI_H
 #define WIFI_H
 
-#include "udp/socket.h"
+#include "socket.h"
 #include <fmt/core.h>
-#include "main.h"
+#include "interface.h"
 
 extern uint16_t Received_packet;
 extern uint8_t rxbuf[25];

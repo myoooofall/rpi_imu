@@ -1,14 +1,6 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-// #define CM4_VERSION
-#define ROCKPIS_VERSION
-
-#define INFRAIN_Pin 4
-#define INFRA_LED_Pin 1
-#define ROBOT_50W
-#define ENCODER_360
-
 #define MAX_MOTOR 4
 
 #include <iostream>
@@ -30,7 +22,5 @@
     #include <wiringPi.h>
     #include <wiringPiI2C.h>
 #endif
-
-#include "wifiz.h"
 
 #endif

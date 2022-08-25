@@ -241,3 +241,7 @@ double robotz::period_test() {
     lasttime = currenttime;
     return period_time;
 }
+
+void robotz::testmode_on() {
+    motor.output_test();
+}

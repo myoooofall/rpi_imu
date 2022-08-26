@@ -11,9 +11,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 # chip option
 option(CM4_VERSION "compile for CM4" ON)
+option(ROCKS_VERSION "compile for ROCKS" OFF)
 if(CM4_VERSION)
     set(LIBS wiringPi)
-else()
+elseif(ROCKS_VERSION)
     include_directories(
         $ENV{HOME}/aarch64-toolchains
         $ENV{HOME}/aarch64-toolchains/include
@@ -62,7 +63,7 @@ if(CM4_VERSION)
     add_executable (S01_CM4 ${TEST_FILES} ${SHARED_SOURCE_FILES})
     target_link_libraries (S01_CM4 ${LIBS})
     target_compile_definitions(S01_CM4 PRIVATE CM4_VERSION)
-else()
+elseif(ROCKS_VERSION)
     file(GLOB TEST_FILES
         ${TEST_FILES}
         ${CMAKE_CURRENT_SOURCE_DIR}/i2c_deviceROCKS.cpp

@@ -3,7 +3,7 @@
 robotz::robotz(int motor_num) : motor(motor_num) {
     // Motor Init
     // TODO: change to while
-    int motors_num = motor.detect();
+    int motors_num = motor.motors_detect();
     if ( motors_num == 0 ) {
         std::cout << "NO device detected" << std::endl;
     }else {
@@ -214,7 +214,7 @@ void robotz::pack(uint8_t *TX_Packet){
 }
 
 void robotz::run(int* vel_pack) {
-    motor.i2c_write(vel_pack);      // FIXME: delay period
+    motor.motors_write(vel_pack);      // FIXME: delay period
 
     //infrare
     // infrare_detect();

@@ -18,7 +18,6 @@ int main() {
     // Robot Init
     robotz zjunlict;
     // zjunlict.testmode_on();
-    zjunlict.motor.detect();
     // TODO: wait for robot udp init
     while ( !Received_packet )
     {

@@ -9,20 +9,22 @@
 #include <cmath>
 #include <chrono>
 #include "interface.h"
+#include "device.h"
 
-class i2c_device{
+#define GPIO_INFRARE_IN     4
+#define GPIO_INFRARE_OUT    5
+#define PWM0_SHOOT          26
+#define GPIO_CHARGE         0
+
+class i2c_device : public device{
 public:
     i2c_device(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
-    int detect();
-    void i2c_write(int* vel_pack);
-    void output_test();
-
-private:
-    int device_num = 0;
-    uint8_t i2c_addr[MAX_MOTOR] = {0x28,0x29,0x30,0x31};
-    int device[MAX_MOTOR];
-    int Rx_buf[MAX_MOTOR];
-    bool i2c_testmode = false;
+    void motors_device(int num, uint8_t *i2c_addr_t) override;
+    int motors_detect() override;
+    void motors_write(int* vel_pack) override;
+    uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) override;
+    void infrare_detect() override;
+    void dribbler() override;
 };
 
 #endif

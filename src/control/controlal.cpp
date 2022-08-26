@@ -2,87 +2,29 @@
 
 using namespace std;
 
-auto controlal::now() { return std::chrono::steady_clock::now(); }
 
-void controlal::control_init(){
+controlal::controlal(Mode _mode){
 
-    std::thread controlThread(&controlal::local_planner_thread_func, this);
-    controlThread.detach();
+        control_mode = _mode;
+		std::thread controlThread(&controlal::local_planner_thread_func, this);
+    	controlThread.detach();
 
-}
+    }
+
+    
+
 
 void controlal::local_planner_thread_func(){ 
 
+	rate Rate(control_rate);
 
-	if(control_mode == RealTime){
+    while(1){
 
-		ofstream out_txt_file;
-		if(debug_flag){
-			
-			cout<<"a"<<endl;
-			out_txt_file.open("/home/pi/Desktop/data2.txt",ios::out | ios::trunc);
-			out_txt_file << fixed;
-
+		if(receive_command){
+			reset();
 		}
-
-		while(fabs(x1)>v0_x*dt | fabs(y1)>v_max*dt | fabs(v0_x)>a_max*dt | fabs(v0_y)>a_max*dt){
-
-			const auto start {now()};
-			compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
-			traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
-			traj_time_dec_y,traj_time_flat_y,control_mode,dt);
-			
-			
-			if(debug_flag){
-
-				out_txt_file<< setprecision(0)<< a[0];
-				out_txt_file<< '\t';
-				out_txt_file<< setw(10)<< setprecision(0)<<a[1];
-				out_txt_file<< setw(10)<< setprecision(1)<<v0_x;
-				out_txt_file<< setw(10)<< setprecision(1)<<v0_y;
-				out_txt_file<< setw(10)<< setprecision(2)<<x1;
-				out_txt_file<< setw(10)<< setprecision(2)<<y1;
-				out_txt_file<< '\n';
-			}
-
-			// const std::intmax_t targetOPS = 500;
-			std::chrono::duration<double, std::ratio<1, targetOPS>> timeBetweenOperation(1);
-			std::this_thread::sleep_until(start+ timeBetweenOperation);
-			// const auto end {now()};
-			// std::chrono::duration<double, std::milli> elapsed {end- start};
-			// std::cout << "Waited " << elapsed.count() << " ms\n";
-
-		}
-		if(debug_flag) out_txt_file<<endl;
-	}
-
-	else{
-
-		compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
-		traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
-		traj_time_dec_y,traj_time_flat_y,control_mode,dt);
-
-		if(debug_flag){
-			cout << "accTabel:" << endl;
-			for (int i = 0; i < accTable.size(); i++ )
-			{
-				cout << accTable[i] << " ";
-			}
-
-			cout<<endl;
-			cout << endl << "velTable:" << endl;
-			for ( int i = 0; i < velTable.size(); i++ )
-			{
-				cout << velTable[i] << " ";
-			}
-			cout <<endl << "posTable:" << endl;
-			for ( int i = 0; i < posTable.size(); i++ )
-			{
-				cout << posTable[i] << " ";
-			}
-			cout << endl;
-			}
-
+		compute();
+		Rate.sleep();
 	}
 
 }
@@ -94,7 +36,6 @@ double controlal::compute_motion_1d(double x1, double v0, double v1,
 					   Mode mode,double dt,PlanType PT)
 {
 	
-
     if(mode == RealTime){            
 		
 		int dis_flag = 1;
@@ -348,4 +289,103 @@ void controlal::compute_motion_2d(double &x1, double &v0_x, double v1_x,
 	}
 
 	
+}
+void controlal::sendCommand(double x, double y, double vx, double vy){
+
+	x1 = x;
+	y1 = y;
+	v0_x = vx;
+	v0_y = vy;
+	receive_command = true;
+	
+
+}
+void controlal::reset(){
+
+	sensor Sensor;
+	Sensor.monitor();
+	receive_command = false;
+
+
+}
+
+void controlal::compute(){
+
+	if(control_mode == RealTime){
+
+		   //cout<<x1<<y1<<v0_x<<v0_y<<endl;
+
+			if(fabs(x1)>v0_x*dt | fabs(y1)>v_max*dt | fabs(v0_x)>a_max*dt | fabs(v0_y)>a_max*dt){
+
+				Mute.lock();
+				start_computing = true;
+				control_done = false;
+				compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
+				traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
+				traj_time_dec_y,traj_time_flat_y,control_mode,dt);
+				Mute.unlock();
+				
+			} 
+			else{
+
+				if(!start_computing && !control_done){
+					cout<<"no command"<<endl;
+				}
+				if(start_computing){
+
+					control_done = true;
+					start_computing = false;
+					cout<<"finished"<<endl;
+				}
+
+			}
+		}
+
+		else if(control_mode == Table){
+
+			compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
+			traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
+			traj_time_dec_y,traj_time_flat_y,control_mode,dt);
+
+
+		}
+
+}
+
+void controlal::debug(){
+
+		ofstream out_txt_file;
+		out_txt_file.open("/home/pi/Desktop/data2.txt",ios::out | ios::trunc);
+		out_txt_file << fixed;
+		out_txt_file<< setprecision(0)<< a[0];
+		out_txt_file<< '\t';
+		out_txt_file<< setw(10)<< setprecision(0)<<a[1];
+		out_txt_file<< setw(10)<< setprecision(1)<<v0_x;
+		out_txt_file<< setw(10)<< setprecision(1)<<v0_y;
+		out_txt_file<< setw(10)<< setprecision(2)<<x1;
+		out_txt_file<< setw(10)<< setprecision(2)<<y1;
+		out_txt_file<< '\n';
+		out_txt_file<<endl;
+
+
+		cout << "accTabel:" << endl;
+		for (int i = 0; i < accTable.size(); i++ )
+		{
+			cout << accTable[i] << " ";
+		}
+
+		cout<<endl;
+		cout << endl << "velTable:" << endl;
+		for ( int i = 0; i < velTable.size(); i++ )
+		{
+			cout << velTable[i] << " ";
+		}
+		cout <<endl << "posTable:" << endl;
+		for ( int i = 0; i < posTable.size(); i++ )
+		{
+			cout << posTable[i] << " ";
+		}
+		cout << endl;
+		
+
 }

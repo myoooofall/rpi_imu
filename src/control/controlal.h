@@ -11,11 +11,9 @@
 #include <mutex>
 
 class sensor{ 
-    public:
+public:
     void monitor(){
-
-
-    }
+}
 
 };
 
@@ -24,24 +22,24 @@ class rate{
 private:
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::duration<int, std::nano>expected_cycle_time_;
-   
+
 
 public:
     rate(int frequency){
-        start = std::chrono::steady_clock::now();
-        expected_cycle_time_ = std::chrono::nanoseconds(1000000000)/frequency;
+    start = std::chrono::steady_clock::now();
+    expected_cycle_time_ = std::chrono::nanoseconds(1000000000)/frequency;
     }
     bool sleep(){
 
-	    std::this_thread::sleep_until(start+ expected_cycle_time_);
-        start = std::chrono::steady_clock::now();
-	    return true;
+    std::this_thread::sleep_until(start+ expected_cycle_time_);
+    start = std::chrono::steady_clock::now();
+    return true;
 
     };
     void reset(){
-	    start = std::chrono::steady_clock::now();
+    start = std::chrono::steady_clock::now();
     }
-    
+
 };
 
 
@@ -54,7 +52,7 @@ public:
         RealTime,
         Table
     };
-    
+
     enum PlanType {
         X,
         Y,
@@ -76,12 +74,12 @@ public:
     double dt =1/control_rate; //s
 
 
-    
+
     //para
     double a_max = 20000;
     double v_max = 3000;
     double d_max = 20000; //mm/s
-    
+
     //Input
     double x1 = 0;
     double y1 = 0;//目标位置(相对当前位置)
@@ -110,16 +108,16 @@ private:
     double v[2] = {0}; //vx,vy calculate result for realtime
     double delta_pos[2] = {0}; //x,y calculate result for realtime
     double compute_motion_1d(double x1, double v0, double v1,
-                       const double a_max, const double d_max, const double v_max,
-                       double &traj_time, double &traj_time_acc, double &traj_time_dec, double &traj_time_flat,
-					   Mode mode,double dt,PlanType PT);
+                            const double a_max, const double d_max, const double v_max,
+                            double &traj_time, double &traj_time_acc, double &traj_time_dec, double &traj_time_flat,
+                            Mode mode,double dt,PlanType PT);
     double get_t_max(double x1, double v0, double v1, double a_max, double d_max, double v_max);
     void compute_motion_2d(double &x1, double &v0_x, double v1_x, 
-                       double &y1, double &v0_y, double v1_y,
-                       const double a_max, const double d_max, const double v_max,
-                       double &traj_time_x, double &traj_time_acc_x, double &traj_time_dec_x, double &traj_time_flat_x,
-                       double &traj_time_y, double &traj_time_acc_y, double &traj_time_dec_y, double &traj_time_flat_y,
-					   Mode mode,double dt);
+                            double &y1, double &v0_y, double v1_y,
+                            const double a_max, const double d_max, const double v_max,
+                            double &traj_time_x, double &traj_time_acc_x, double &traj_time_dec_x, double &traj_time_flat_x,
+                            double &traj_time_y, double &traj_time_acc_y, double &traj_time_dec_y, double &traj_time_flat_y,
+                            Mode mode,double dt);
     void local_planner_thread_func();
     void reset();
     void compute();

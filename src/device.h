@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <vector>
 #include <cmath>
 #include <chrono>
 #include <thread>
@@ -26,7 +27,6 @@ public:
 protected:
     int device_num = MAX_MOTOR;
     uint8_t i2c_addr[MAX_MOTOR];
-    int motors_i2c[MAX_MOTOR];
     int Rx_buf[MAX_MOTOR];
     bool i2c_testmode = false;
 

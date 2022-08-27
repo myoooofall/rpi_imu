@@ -20,6 +20,9 @@ public:
     uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) override;
     void infrare_detect() override;
     void dribbler() override;
+
+private:
+    int motors_i2c[MAX_MOTOR];
 };
 
 #endif

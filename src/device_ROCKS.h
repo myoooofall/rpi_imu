@@ -10,6 +10,14 @@
 
 #define MAX_MOTOR 4
 
+#define LOW     0
+#define HIGH    1
+
+#define GPIO_INFRARE_IN     4
+#define GPIO_INFRARE_OUT    5
+#define PWM0_SHOOT          26
+#define GPIO_CHARGE         0
+
 class devicez : public device{
 public:
     devicez(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
@@ -24,13 +32,13 @@ public:
     void i2c_read(int* vel_encoder);
 
 private:
-    int device_num = 0;
-    uint8_t i2c_addr[MAX_MOTOR] = {0x28,0x29,0x30,0x31};
-
     mraa::I2c device = mraa::I2c(0);
     std::vector<mraa::I2c> devices;
 
-    int Rx_buf[MAX_MOTOR];
+    mraa::Pwm shoot;
+    mraa::Gpio charge;
+    mraa::Gpio infrarein;
+    mraa::Gpio infrareout;
 };
 
 #endif

@@ -1,6 +1,6 @@
-#include "i2c_deviceCM4.h"
+#include "device_CM4.h"
 
-i2c_device::i2c_device(int num, uint8_t *i2c_addr_t) {
+devicez::devicez(int num, uint8_t *i2c_addr_t) {
     motors_device(num, i2c_addr_t);
 
     // shoot
@@ -12,7 +12,7 @@ i2c_device::i2c_device(int num, uint8_t *i2c_addr_t) {
     pinMode(GPIO_INFRARE_IN, OUTPUT);
 }
 
-void i2c_device::motors_device(int num, uint8_t *i2c_addr_t) {
+void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
     device_num = num;
     if (wiringPiSetup() != 0) {
         std::cout << "wiringPi error!" << std::endl;
@@ -24,7 +24,7 @@ void i2c_device::motors_device(int num, uint8_t *i2c_addr_t) {
     }
 }
 
-int i2c_device::motors_detect() {
+int devicez::motors_detect() {
     int motors_on = 0;
     for (int i=0; i<device_num; i++) {
         Rx_buf[i] = wiringPiI2CRead(motors_i2c[i]); // TODO: read specific bits
@@ -39,21 +39,20 @@ int i2c_device::motors_detect() {
     return motors_on;
 }
 
-void i2c_device::motors_write(int* vel_pack) {
+void devicez::motors_write(int* vel_pack) {
     for (int i=0; i<device_num; i++) {
         wiringPiI2CWrite(motors_i2c[i], abs(vel_pack[i]));
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     // Output
-    if (i2c_testmode)
-    {
+    if (i2c_testmode) {
         std::cout << "motor speed: ";
         for (int i=0; i<device_num; i++)    std::cout<< abs(vel_pack[i]) << " ";
         std::cout << std::endl;
     }
 }
 
-uint8_t i2c_device::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) {
+uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) {
     pwmWrite(PWM0_SHOOT, 0);
 
     if(test_charge_count++ > 1000) {
@@ -76,5 +75,5 @@ uint8_t i2c_device::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot
     return Robot_Is_Boot_charged;
 }
 
-void i2c_device::infrare_detect() {}
-void i2c_device::dribbler() {}
+void devicez::infrare_detect() {}
+void devicez::dribbler() {}

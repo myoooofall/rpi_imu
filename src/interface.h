@@ -18,9 +18,11 @@
     #include "mraa/gpio.hpp"
     #include "mraa/i2c.hpp"
     #include "mraa/pwm.hpp"
+    #include "device_ROCKS.h"
 #elif defined(CM4_VERSION)
     #include <wiringPi.h>
     #include <wiringPiI2C.h>
+    #include "device_CM4.h"
 #endif
 
 #endif

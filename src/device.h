@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <cmath>
+#include <chrono>
+#include <thread>
 
 #define MAX_MOTOR   4
 

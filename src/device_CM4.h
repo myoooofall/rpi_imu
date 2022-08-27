@@ -3,12 +3,7 @@
 
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <cmath>
-#include <chrono>
-#include "interface.h"
+
 #include "device.h"
 
 #define GPIO_INFRARE_IN     4
@@ -16,9 +11,9 @@
 #define PWM0_SHOOT          26
 #define GPIO_CHARGE         0
 
-class i2c_device : public device{
+class devicez : public device{
 public:
-    i2c_device(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
+    devicez(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
     void motors_device(int num, uint8_t *i2c_addr_t) override;
     int motors_detect() override;
     void motors_write(int* vel_pack) override;

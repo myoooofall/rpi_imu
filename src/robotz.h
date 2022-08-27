@@ -5,24 +5,16 @@
 #include "wifiz.h"
 // #include "controlal.h"
 
-#ifdef ROCKPIS_VERSION
-    #include "i2c_deviceROCKS.h"
-    #include "other_gpioROCKS.h"
-#elif defined(CM4_VERSION)
-    #include "i2c_deviceCM4.h"
-    #include "other_gpioCM4.h"
-#endif
-
 class robotz {
 public:
     robotz(int motor_num=4);
     uint8_t robot_num = 0x0f;
     
-    i2c_device motor;
+    devicez i2c_d;
     int test_motor_num = 2;
     uint8_t motor_addr[4] = {0x28,0x29,0x30,0x31};
 
-    other_gpio gpio_test;
+    // other_gpio gpio_test;
     // controlal bangbang;
     void testmode_on();
 

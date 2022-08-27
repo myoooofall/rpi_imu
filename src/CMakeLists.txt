@@ -57,8 +57,7 @@ file(GLOB TEST_FILES
 if(CM4_VERSION)
     file(GLOB TEST_FILES
         ${TEST_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/i2c_deviceCM4.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/other_gpioCM4.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/device_CM4.cpp
     )
     add_executable (S01_CM4 ${TEST_FILES} ${SHARED_SOURCE_FILES})
     target_link_libraries (S01_CM4 ${LIBS})
@@ -66,8 +65,7 @@ if(CM4_VERSION)
 elseif(ROCKS_VERSION)
     file(GLOB TEST_FILES
         ${TEST_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/i2c_deviceROCKS.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/other_gpioROCKS.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/device_ROCKS.cpp
     )
     add_executable (S01_ROCKS ${TEST_FILES} ${SHARED_SOURCE_FILES})
     target_link_libraries (S01_ROCKS ${LIBS})

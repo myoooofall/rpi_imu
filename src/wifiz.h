@@ -3,7 +3,6 @@
 
 #include "socket.h"
 #include <fmt/core.h>
-#include "interface.h"
 
 extern uint16_t Received_packet;
 extern uint8_t rxbuf[25];

@@ -1,9 +1,14 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#include "interface.h"
 #include "wifiz.h"
 // #include "controlal.h"
+
+#ifdef ROCKPIS_VERSION
+    #include "device_ROCKS.h"
+#elif defined(CM4_VERSION)
+    #include "device_CM4.h"
+#endif
 
 class robotz {
 public:
@@ -14,7 +19,6 @@ public:
     int test_motor_num = 2;
     uint8_t motor_addr[4] = {0x28,0x29,0x30,0x31};
 
-    // other_gpio gpio_test;
     // controlal bangbang;
     void testmode_on();
 
@@ -44,14 +48,8 @@ public:
 
     const double Vel_k2 = 0.520573; // TODO: change to 1
 
-    double sin_angle[4] = {0.7071067811865476, -0.7071067811865476,
-                        -0.7071067811865476,
-                        0.7071067811865476};  // double sin_angle[4] = {sin(58),
-                                                // -sin(58), -sin(45), sin(45)};
-    double cos_angle[4] = {-0.7071067811865476, -0.7071067811865476,
-                        0.7071067811865476,
-                        0.7071067811865476};  // double cos_angle[4] = {-cos(58),
-                                                // -cos(58), cos(45), cos(45)};
+    static constexpr double sin_angle[4] = {sin(58), -sin(58), -sin(45), sin(45)};
+    static constexpr double cos_angle[4] = {-cos(58), -cos(58), cos(45), cos(45)};
 
     uint8_t Robot_Is_Infrared;      //红外触发
     uint8_t Robot_Is_Boot_charged;  //电容充电到60V

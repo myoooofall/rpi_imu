@@ -1,10 +1,10 @@
 #ifndef I2C_H
 #define I2C_H
 
-#include "mraa/common.hpp"
-#include "mraa/gpio.hpp"
-#include "mraa/i2c.hpp"
-#include "mraa/pwm.hpp"
+#include <mraa/common.hpp>
+#include <mraa/gpio.hpp>
+#include <mraa/i2c.hpp>
+#include <mraa/pwm.hpp>
 
 #include "device.h"
 

@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 # chip option
-option(CM4_VERSION "compile for CM4" OFF)
-option(ROCKS_VERSION "compile for ROCKS" ON)
+option(CM4_VERSION "compile for CM4" ON)
+option(ROCKS_VERSION "compile for ROCKS" OFF)
 if(ROCKS_VERSION)
     set(CMAKE_C_COMPILER aarch64-none-linux-gnu-gcc)
     set(CMAKE_CXX_COMPILER aarch64-none-linux-gnu-g++)
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif()
 
 project(S01 LANGUAGES CXX)
@@ -51,29 +52,38 @@ set(LIBS
 file(GLOB SHARED_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/share/control/*.cpp
-)
-
-file(GLOB TEST_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wifiz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/robotz.cpp
 )
-
 # chip option
 if(CM4_VERSION)
-    file(GLOB TEST_FILES
-        ${TEST_FILES}
+    file(GLOB SHARED_SOURCE_FILES
+        ${SHARED_SOURCE_FILES}
         ${CMAKE_CURRENT_SOURCE_DIR}/device_CM4.cpp
     )
-    add_executable (S01_CM4 ${TEST_FILES} ${SHARED_SOURCE_FILES})
-    target_link_libraries (S01_CM4 ${LIBS})
-    target_compile_definitions(S01_CM4 PRIVATE CM4_VERSION)
 elseif(ROCKS_VERSION)
-    file(GLOB TEST_FILES
-        ${TEST_FILES}
+    file(GLOB SHARED_SOURCE_FILES
+        ${SHARED_SOURCE_FILES}
         ${CMAKE_CURRENT_SOURCE_DIR}/device_ROCKS.cpp
     )
-    add_executable (S01_ROCKS ${TEST_FILES} ${SHARED_SOURCE_FILES})
-    target_link_libraries (S01_ROCKS ${LIBS})
-    target_compile_definitions(S01_ROCKS PRIVATE ROCKPIS_VERSION)
 endif()
+
+
+file(GLOB TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp
+)
+
+foreach(test_file ${TEST_FILES})
+    file(RELATIVE_PATH test_file_name ${CMAKE_CURRENT_SOURCE_DIR} ${test_file})
+    string(REPLACE ".cpp" "" test_name ${test_file_name})
+    string(REPLACE "test/" "" test_name ${test_name})
+    message("test file: " ${test_file} " -- " ${test_name})
+
+    add_executable (${test_name} ${test_file_name} ${SHARED_SOURCE_FILES})
+    target_link_libraries (${test_name} ${LIBS})
+    if(CM4_VERSION)
+        target_compile_definitions(${test_name} PRIVATE CM4_VERSION)
+    elseif(ROCKS_VERSION)
+        target_compile_definitions(${test_name} PRIVATE ROCKPIS_VERSION)
+    endif()
+endforeach()

@@ -22,15 +22,20 @@ void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
 int devicez::motors_detect() {
     int motors_on = 0;
     for (int i=0; i<device_num; i++) {
-        Rx_buf[i] = devices[i].readByte();
+        try {
+            Rx_buf[i] = devices[i].readByte();
+        }
+        catch(const std::exception& e) {
+            std::cerr << e.what() << '\n';
+        }
         // Rx_buf[i] = wiringPiI2CRead(device[i]);
         if (Rx_buf[i] != -1)    motors_on++;
     }
     if (i2c_testmode && motors_on) {
         // Output
-        // std::cout << "huibao: ";
-        // for (int i=0; i<device_num; i++)    std::cout<< Rx_buf[i] << " ";
-        // std::cout << std::endl;
+        std::cout << "huibao: ";
+        for (int i=0; i<device_num; i++)    std::cout<< Rx_buf[i] << " ";
+        std::cout << std::endl;
     }
     return motors_on;
 }

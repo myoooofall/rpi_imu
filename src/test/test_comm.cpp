@@ -1,19 +1,15 @@
 #include "robotz.h"
-#include "wifiz.h"
-
-int vel_pack[4] = {0,0,0,0};
+// #include "wifiz.h"
 
 uint16_t Received_packet = 0;
-uint8_t received_packet_flag = 0;
 uint32_t Total_Missed_Package_Num = 0;
+bool received_packet_flag;
 
-uint8_t txbuf[25] = {0x0};
 uint8_t rxbuf[25] = {0x0};
 
+std::mutex mutex_comm;
+
 int main() {
-    // Udp Init
-    udp_init();
-    
     // Robot Init
     robotz zjunlict;
     // zjunlict.testmode_on();
@@ -23,33 +19,20 @@ int main() {
         
     }
     zjunlict.robot_num = 0x0f;
-    std::mutex _mutex;
 
     while (1)
     {   
         // Robot control
-        zjunlict.run(vel_pack);
+        zjunlict.run();
 
         // Detect receive pack
-        if (Received_packet) {
-            // Callback of udp receive
-            std::scoped_lock lock(_mutex);
-            received_packet_flag = zjunlict.unpack(rxbuf);
-            if (received_packet_flag) {
-                // Correct package
-                zjunlict.regular(vel_pack);
-                Total_Missed_Package_Num = 0;
-            }
-            Received_packet = 0;
-        }else {
-            received_packet_flag = 0;
+        received_packet_flag = 0;
+        if (Received_packet) {  // Callback of udp receive
+            received_packet_flag = zjunlict.regular_re();
         }
-
         if (received_packet_flag == 0) {
-            // Missing package for 1 seconds
-            if (Total_Missed_Package_Num++ >= 500) {
-                zjunlict.stand(vel_pack);   // Set to 0
-                udp_restart();
+            if (Total_Missed_Package_Num++ >= 500) {    // Missing package for 1 seconds
+                zjunlict.stand();   // Set to 0
             }
         }
         

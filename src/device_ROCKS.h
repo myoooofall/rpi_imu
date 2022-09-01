@@ -13,10 +13,10 @@
 #define LOW     0
 #define HIGH    1
 
-#define GPIO_INFRARE_IN     4
-#define GPIO_INFRARE_OUT    5
-#define PWM0_SHOOT          26
-#define GPIO_CHARGE         0
+#define GPIO_INFRARE_IN     16  // GPIO2_B2
+#define GPIO_INFRARE_OUT    18  // GPIO2_B1
+#define PWM0_SHOOT          13  // FIXME: use pin PWM_R
+#define GPIO_CHARGE         22
 
 class devicez : public device{
 public:

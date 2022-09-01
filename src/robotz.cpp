@@ -14,10 +14,11 @@ robotz::robotz(int motor_num) : i2c_d(motor_num) {
 
 //解包，到每个轮子的速度
 int robotz::unpack(uint8_t *Packet) {
-    int received_packet_flag = 0;
+    std::scoped_lock lock(mutex_comm);
+
     if ((Packet[0] & 0xf0) == 0x40) {
         if ((robot_num == (Packet[1] & 0x0f)) && (Packet[0] & 0x08)) {
-            received_packet_flag = 1;
+            valid_pack = 1;
             Vx_package = (Packet[2] & 0x7f) + ((Packet[17] & 0xc0) << 1);
             Vx_package = (Packet[2] & 0x80) ? ( -Vx_package ) : Vx_package;
             Vy_package = (Packet[3] & 0x7f) + ((Packet[17] & 0x30) << 3);
@@ -31,7 +32,7 @@ int robotz::unpack(uint8_t *Packet) {
             use_dir = Packet[21] & 0x80;
         }
         else if((robot_num == (Packet[5] & 0x0f)) && (Packet[0] & 0x04)){
-            received_packet_flag = 1;
+            valid_pack = 1;
             Vx_package = (Packet[6] & 0x7f) + ((Packet[18] & 0xc0) << 1);
             Vx_package = (Packet[6] & 0x80) ? ( -Vx_package ) : Vx_package;
             Vy_package = (Packet[7] & 0x7f) + ((Packet[18] & 0x30) << 3);
@@ -45,7 +46,7 @@ int robotz::unpack(uint8_t *Packet) {
             use_dir = Packet[22] & 0x80;
         }
         else if((robot_num == (Packet[9] & 0x0f)) && (Packet[0] & 0x02)){
-            received_packet_flag = 1;
+            valid_pack = 1;
             Vx_package = (Packet[10] & 0x7f) + ((Packet[19] & 0xc0) << 1);
             Vx_package = (Packet[10] & 0x80) ? ( -Vx_package ) : Vx_package;
             Vy_package = (Packet[11] & 0x7f) + ((Packet[19] & 0x30) << 3);
@@ -59,7 +60,7 @@ int robotz::unpack(uint8_t *Packet) {
             use_dir = Packet[23] & 0x80;
         }
         else if((robot_num == (Packet[13] & 0x0f)) && (Packet[0] & 0x01)){
-            received_packet_flag = 1;
+            valid_pack = 1;
             Vx_package = (Packet[14] & 0x7f) + ((Packet[20] & 0xc0) << 1);
             Vx_package = (Packet[14] & 0x80) ? ( -Vx_package ) : Vx_package;
             Vy_package = (Packet[15] & 0x7f) + ((Packet[20] & 0x30) << 3);
@@ -72,14 +73,14 @@ int robotz::unpack(uint8_t *Packet) {
             Robot_Boot_Power = Packet[24] & 0x7f;
             use_dir = Packet[24] & 0x80;
         }else 
-            received_packet_flag = 0;
+            valid_pack = 0;
     }else
-        received_packet_flag = 0;
+        valid_pack = 0;
     
-    return received_packet_flag;
+    return valid_pack;
 }
 
-void robotz::motion_planner(int* vel_pack) {
+void robotz::motion_planner() {
     int16_t acc_x = 0;
     int16_t acc_y = 0;
     double acc_whole = 0;
@@ -123,7 +124,7 @@ void robotz::motion_planner(int* vel_pack) {
     vel_pack[3] = ((sin_angle[3]) * Vx_package + (cos_angle[3]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
 }
 
-void robotz::stand(int* vel_pack) {
+void robotz::stand() {
     Vy_package = 0;
     Vx_package = 0;
     Vr_package = 0;
@@ -131,10 +132,11 @@ void robotz::stand(int* vel_pack) {
     Robot_drib = 0;
                     
     std::fill_n (vel_pack, MAX_MOTOR, 0);
+    wifiz.udp_restart();
 }
 
-void robotz::regular(int* vel_pack) {
-    motion_planner(vel_pack);
+void robotz::regular() {
+    motion_planner();
     if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
         Left_Report_Package = 4;
         Last_Robot_Status = Robot_Status;
@@ -147,11 +149,38 @@ void robotz::regular(int* vel_pack) {
         
     if(Left_Report_Package > 0 || Kick_Count > 0){
         pack(TX_Packet);
-        udp_sender(TX_Packet);
+        wifiz.udp_sender(TX_Packet);
         transmitted_packet++;
     }
 
     if(Left_Report_Package > 0)   Left_Report_Package --;
+}
+
+bool robotz::regular_re() {
+    if (unpack(rxbuf)) {
+        // Correct package
+        motion_planner();
+        if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
+            Left_Report_Package = 4;
+            Last_Robot_Status = Robot_Status;
+        }
+
+        if(Kick_Count > 0)
+            Kick_Count--;
+        else
+            Robot_Status &= 0xCF;
+            
+        if(Left_Report_Package > 0 || Kick_Count > 0){
+            pack(TX_Packet);
+            wifiz.udp_sender(TX_Packet);
+            transmitted_packet++;
+        }
+
+        if(Left_Report_Package > 0)   Left_Report_Package --;
+    }
+
+    Received_packet = 0;
+    return valid_pack;
 }
 
 void robotz::pack(uint8_t *TX_Packet){
@@ -213,7 +242,7 @@ void robotz::pack(uint8_t *TX_Packet){
     TX_Packet[13] = (temp4 & 0xFF);
 }
 
-void robotz::run(int* vel_pack) {
+void robotz::run() {
     i2c_d.motors_write(vel_pack);      // FIXME: delay period
 
     //infrare

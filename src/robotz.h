@@ -15,6 +15,7 @@ public:
     robotz(int motor_num=4);
     uint8_t robot_num = 0x0f;
     
+    wifi_comm wifiz;
     devicez i2c_d;
     int test_motor_num = 2;
     uint8_t motor_addr[4] = {0x28,0x29,0x30,0x31};
@@ -80,12 +81,13 @@ public:
 
     void pack(uint8_t *TX_Packet);
     int unpack(uint8_t *Packet);
-    void motion_planner(int* vel_pack);
+    void motion_planner();
     void shoot_chip();
 
-    void run(int* vel_pack);
-    void regular(int* vel_pack);
-    void stand(int* vel_pack);
+    void run();
+    void regular();
+    bool regular_re();
+    void stand();
 
     int infrare_detect();
     void infrare_toggin();
@@ -93,13 +95,15 @@ public:
     double period_test();
 
 private:
-    std::mutex mutex_robot;
+    int vel_pack[4] = {0,0,0,0};
+
     int test_charge_count = 0;
 
     double lasttime  = 0;
     double currenttime  = 0;
 
     int infr_count = 0;
+    bool valid_pack = 0;
 };
 
 #endif

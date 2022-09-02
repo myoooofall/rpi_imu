@@ -38,7 +38,7 @@ find_package(Threads REQUIRED)
 include_directories(
     ${fmt_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/share
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
 )

@@ -17,9 +17,15 @@ void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
     if (wiringPiSetup() != 0) {
         std::cout << "wiringPi error!" << std::endl;
     }
+
+    if(i2c_addr_t)   std::copy(i2c_addr_t, i2c_addr_t+device_num, motors_i2c);
+    else {
+        std::copy(config::motors_addr, config::motors_addr+device_num, motors_i2c);
+        zos::log("use default i2c address");
+    }
+    
     for (int i=0; i<device_num; i++) {
-        if (i2c_addr_t)   i2c_addr[i] = i2c_addr_t[i];
-        motors_i2c[i] = wiringPiI2CSetup(i2c_addr[i]);
+        motors_i2c[i] = wiringPiI2CSetup(motors_i2c[i]);
         // std::cout << i << ": " << std::hex << i2c_addr[i] << " ";
     }
 }

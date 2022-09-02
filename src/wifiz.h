@@ -1,8 +1,10 @@
 #ifndef WIFI_H
 #define WIFI_H
 
-#include "socket.h"
+#include "zos/socket.h"
+#include "zos/log.h"
 #include <fmt/core.h>
+#include "config.h"
 
 extern uint16_t Received_packet;
 extern uint8_t rxbuf[25];
@@ -16,8 +18,14 @@ public:
     void udp_restart();
     void udp_receiver();
     void udp_sender(uint8_t *txbuf);
+    void udp_sender_mc();
 
 private:
+    asio::ip::udp::endpoint receiver_endpoint;
+    asio::ip::udp::endpoint multicast_endpoint;
+
+    zos::udp::socket socket_send_single;
+    zos::udp::socket socket_send_multicast;
 };
 
 

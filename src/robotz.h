@@ -27,15 +27,8 @@ public:
     // uint8_t Robot_Is_Boot_charged;  //电容充电到60V
     uint8_t Robot_drib;
     uint8_t Robot_Chip_Or_Shoot;    //chip:1  shoot:0
-    // uint8_t Robot_Is_Shoot;
-    // uint8_t Robot_Is_Chip;
-    // uint8_t shoot_chip_flag = 0;
     uint8_t Robot_Boot_Power = 0;
     uint8_t Robot_Is_Report;
-    // uint8_t Robot_Chipped = 0, Robot_Shooted = 0;
-    // uint8_t Robot_Status = 0, Last_Robot_Status = 0;
-    // uint8_t Kick_Count = 0;
-    // int8_t Left_Report_Package = 0;
 
     int16_t Vx_package = 0, Vy_package = 0, Vr_package = 0;  //下发机器人速度
     int16_t Vx_package_last = 0, Vy_package_last = 0, Vr_package_last = 0;  //上一帧下发机器人速度
@@ -46,11 +39,6 @@ public:
     uint16_t acc_r_set = 60;  //
     uint8_t DEC_FRAME = 0;
     uint8_t use_dir = 0;
-
-    const double Vel_k2 = 0.520573; // TODO: change to 1
-
-    static constexpr double sin_angle[4] = {sin(58), -sin(58), -sin(45), sin(45)};
-    static constexpr double cos_angle[4] = {-cos(58), -cos(58), cos(45), cos(45)};
 
     uint8_t Robot_Is_Infrared;      //红外触发
     uint8_t Robot_Is_Boot_charged;  //电容充电到60V
@@ -104,6 +92,11 @@ private:
 
     int infr_count = 0;
     bool valid_pack = 0;
+    
+    const double Vel_k2 = config::vel_ratio;
+
+    static constexpr double sin_angle[4] = {sin(config::car_angle), -sin(config::car_angle), -sin(45), sin(45)};
+    static constexpr double cos_angle[4] = {-cos(config::car_angle), -cos(config::car_angle), cos(45), cos(45)};
 };
 
 #endif

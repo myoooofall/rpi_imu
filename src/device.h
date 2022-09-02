@@ -10,7 +10,8 @@
 #include <thread>
 #include <mutex>
 
-#define MAX_MOTOR   4
+#include "zos/log.h"
+#include "config.h"
 
 class device{
 public:
@@ -27,7 +28,6 @@ public:
 
 protected:
     int device_num = MAX_MOTOR;
-    uint8_t i2c_addr[MAX_MOTOR];
     int Rx_buf[MAX_MOTOR];
     bool i2c_testmode = false;
 

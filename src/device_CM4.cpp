@@ -1,6 +1,6 @@
 #include "device_CM4.h"
 
-devicez::devicez(int num, uint8_t *i2c_addr_t) {
+devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th(num) {
     motors_device(num, i2c_addr_t);
 
     // shoot
@@ -21,7 +21,7 @@ void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
     if(i2c_addr_t)   std::copy(i2c_addr_t, i2c_addr_t+device_num, motors_i2c);
     else {
         std::copy(config::motors_addr, config::motors_addr+device_num, motors_i2c);
-        zos::log("use default i2c address");
+        zos::info("use default i2c address\n");
     }
     
     for (int i=0; i<device_num; i++) {
@@ -38,24 +38,27 @@ int devicez::motors_detect() {
     }
     if (i2c_testmode && motors_on) {
         // Output
-        std::cout << "huibao: ";
-        for (int i=0; i<device_num; i++)    std::cout<< Rx_buf[i] << " ";
-        std::cout << std::endl;
+        // std::cout << "huibao: ";
+        // for (int i=0; i<device_num; i++)    std::cout<< Rx_buf[i] << " ";
+        // std::cout << std::endl;
+        // std::string motor_str;
+        zos::log("motor status: {}\n", fmt::ptr(&Rx_buf));
     }
     return motors_on;
 }
 
-void devicez::motors_write(int* vel_pack) {
+void devicez::motors_write(std::vector<int>& vel_pack) {
     for (int i=0; i<device_num; i++) {
-        wiringPiI2CWrite(motors_i2c[i], abs(vel_pack[i]));
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        i2c_th.enqueue(&devicez::motors_write_single, this, i, abs(vel_pack[i]));
     }
     // Output
     if (i2c_testmode) {
-        std::cout << "motor speed: ";
-        for (int i=0; i<device_num; i++)    std::cout<< abs(vel_pack[i]) << " ";
-        std::cout << std::endl;
+        zos::log("motor write: {}\n", fmt::join(vel_pack, " "));
     }
+}
+
+void devicez::motors_write_single(int motor_id, int vel) {
+    wiringPiI2CWrite(motors_i2c[motor_id], abs(vel));
 }
 
 uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) {
@@ -63,7 +66,7 @@ uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Po
 
     if(test_charge_count++ > 1000) {
         digitalWrite(GPIO_CHARGE, HIGH);    // start charge
-        std::cout << "Robot_Is_Boot_charged" << std::endl;
+        zos::info("Robot is boot charged\n");
         test_charge_count = 0;
         Robot_Is_Boot_charged = 1;          // enable shoot
     }else if(test_charge_count == 20) {
@@ -76,7 +79,7 @@ uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Po
         pwmWrite(PWM0_SHOOT, Robot_Boot_Power*3);
         Robot_Is_Boot_charged = 0;
         test_charge_count = 0;
-        std::cout << "shoot" << std::endl;
+        zos::info("shoot");
     }
     return Robot_Is_Boot_charged;
 }

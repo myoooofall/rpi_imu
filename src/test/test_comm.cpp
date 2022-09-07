@@ -18,13 +18,9 @@ int main() {
     {
         
     }
-    zjunlict.robot_num = 0x0f;
 
     while (1)
-    {   
-        // Robot control
-        zjunlict.run();
-
+    {
         // Detect receive pack
         received_packet_flag = 0;
         if (Received_packet) {  // Callback of udp receive

@@ -1,6 +1,6 @@
 #include "robotz.h"
 
-robotz::robotz(int motor_num) : i2c_d(motor_num) {
+robotz::robotz(int motor_num) : i2c_d(motor_num), thpool(1) {
     // Motor Init
     // TODO: change to while
     int motors_num = i2c_d.motors_detect();
@@ -10,6 +10,8 @@ robotz::robotz(int motor_num) : i2c_d(motor_num) {
         std::cout << motors_num << " motor detected!" << std::endl;
     }
     // bangbang.control_init();
+
+    thpool.enqueue(&robotz::run, this);
 }
 
 //解包，到每个轮子的速度
@@ -131,7 +133,7 @@ void robotz::stand() {
     use_dir = 0;
     Robot_drib = 0;
                     
-    std::fill_n (vel_pack, MAX_MOTOR, 0);
+    std::fill_n(begin(vel_pack), MAX_MOTOR, 0);
     wifiz.udp_restart();
 }
 
@@ -183,11 +185,11 @@ bool robotz::regular_re() {
     return valid_pack;
 }
 
-void robotz::pack(uint8_t *TX_Packet){
+void robotz::pack(std::vector<uint8_t> &TX_Packet){
     int temp_bat;
     int temp_boot;
     
-    memset(TX_Packet, 0, 25);
+    std::fill_n(begin(TX_Packet), TX_BUF_SIZE, 0);
     TX_Packet[0] = 0xff;
     TX_Packet[1] = 0x02;
     TX_Packet[2] = robot_num;
@@ -243,32 +245,35 @@ void robotz::pack(uint8_t *TX_Packet){
 }
 
 void robotz::run() {
-    i2c_d.motors_write(vel_pack);      // FIXME: delay period
+    zos::Rate robot_rate(config::robot_freq);
+    while (true)
+    {
+        i2c_d.motors_write(vel_pack);      // FIXME: delay period
 
-    //infrare
-    // infrare_detect();
-    // if (!Robot_Is_Infrared) {
-    //     std::cout << "infrare triggered: " << infr_count++ << std::endl;
-    // }
+        //infrare
+        // infrare_detect();
+        // if (!Robot_Is_Infrared) {
+        //     std::cout << "infrare triggered: " << infr_count++ << std::endl;
+        // }
 
-    //dirbble
-    
-    // shoot and chip
-    // TODO: Shoot and chip-need to determine time flag
-    // if(chipshoot_timerdelay_flag < 1000)
-    //     chipshoot_timerdelay_flag++;
-    Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
+        //dirbble
+        
+        // shoot and chip
+        // TODO: Shoot and chip-need to determine time flag
+        // if(chipshoot_timerdelay_flag < 1000)
+        //     chipshoot_timerdelay_flag++;
+        Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
 
-    // period_test();
+        robot_rate.sleep();
+        period_test();
+    }
 }
 
-double robotz::period_test() {
-    double period_time;
-    currenttime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count()%1000000000;
-    period_time = (currenttime - lasttime)/1000;
-    std::cout << "period time: " << period_time << std::endl;
+void robotz::period_test() {
+    auto currenttime = std::chrono::steady_clock::now();
+    auto step = (currenttime - lasttime);
+    zos::info("period time: {}\n", step.count()/1000);
     lasttime = currenttime;
-    return period_time;
 }
 
 void robotz::testmode_on() {

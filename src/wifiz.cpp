@@ -5,7 +5,7 @@ void _cb(const void* p,size_t lens) {
     std::string s(static_cast<const char*>(p),lens);
     // 更新最新数据包
     Received_packet = 1;
-    std::copy(std::begin(s), std::end(s), std::begin(rxbuf));
+    std::copy(begin(s), end(s), std::begin(rxbuf));
 }
 
 wifi_comm::wifi_comm() {
@@ -32,12 +32,12 @@ void wifi_comm::udp_receiver() {
     zos::__io::_()->run();
 }
 
-void wifi_comm::udp_sender(uint8_t *txbuf) {
-    socket_send_single.send_to(fmt::format("count : {}",txbuf), receiver_endpoint);   // TODO: protobuf
+void wifi_comm::udp_sender(std::vector<uint8_t> &txbuf) {
+    socket_send_single.send_to(fmt::format("send data: {}",fmt::join(txbuf, " ")), receiver_endpoint);   // TODO: protobuf
     // std::cout << "send 1 message" <<std::endl;
 }
 
 void wifi_comm::udp_sender_mc() {
     socket_send_multicast.send_to(fmt::format("muliticast test"), multicast_endpoint);
-    zos::log("multicast test");
+    zos::info("multicast test\n");
 }

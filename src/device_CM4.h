@@ -16,12 +16,14 @@ public:
     devicez(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
     void motors_device(int num, uint8_t *i2c_addr_t) override;
     int motors_detect() override;
-    void motors_write(int* vel_pack) override;
+    void motors_write(std::vector<int>& vel_pack) override;
+    void motors_write_single(int motor_id, int vel) override;
     uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) override;
     void infrare_detect() override;
     void dribbler() override;
 
 private:
+    ThreadPool i2c_th;
     int motors_i2c[MAX_MOTOR];
 };
 

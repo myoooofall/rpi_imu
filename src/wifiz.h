@@ -17,7 +17,7 @@ public:
     void udp_stop();
     void udp_restart();
     void udp_receiver();
-    void udp_sender(uint8_t *txbuf);
+    void udp_sender(std::vector<uint8_t> &txbuf);
     void udp_sender_mc();
 
 private:

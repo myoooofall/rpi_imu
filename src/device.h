@@ -10,6 +10,8 @@
 #include <thread>
 #include <mutex>
 
+#include "zos/utils/threadpool.h"
+#include "zos/utils/rate.h"
 #include "zos/log.h"
 #include "config.h"
 
@@ -17,7 +19,8 @@ class device{
 public:
     virtual void motors_device(int num, uint8_t *i2c_addr_t) = 0;
     virtual int motors_detect() = 0;
-    virtual void motors_write(int* vel_pack) = 0;
+    virtual void motors_write(std::vector<int>& vel_pack) = 0;
+    virtual void motors_write_single(int motor_id, int vel) = 0;
     virtual uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) = 0;
     virtual void infrare_detect() = 0;
     virtual void dribbler() = 0;

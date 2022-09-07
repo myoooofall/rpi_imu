@@ -13,7 +13,7 @@
 class robotz {
 public:
     robotz(int motor_num=4);
-    uint8_t robot_num = 0x0f;
+    uint8_t robot_num = config::robot_id;
     
     wifi_comm wifiz;
     devicez i2c_d;
@@ -61,13 +61,9 @@ public:
     double Encoder_count_Motor3_avg = 0;
     double Encoder_count_Motor4_avg = 0;
 
-    uint8_t RX_Packet[25];
-    uint8_t TX_Packet[25] = {
-        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,  //[0-8]
-        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,        //[9-16]
-        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};       //[17-24]
+    // uint8_t RX_Packet[25];
 
-    void pack(uint8_t *TX_Packet);
+    void pack(std::vector<uint8_t> &TX_Packet);
     int unpack(uint8_t *Packet);
     void motion_planner();
     void shoot_chip();
@@ -80,15 +76,20 @@ public:
     int infrare_detect();
     void infrare_toggin();
 
-    double period_test();
+    void period_test();
 
 private:
-    int vel_pack[4] = {0,0,0,0};
+    std::vector<int> vel_pack = {0,0,0,0};
+    std::vector<uint8_t> TX_Packet = {
+        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,  //[0-8]
+        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,        //[9-16]
+        0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};       //[17-24]
+
+    ThreadPool thpool;
 
     int test_charge_count = 0;
 
-    double lasttime  = 0;
-    double currenttime  = 0;
+    std::chrono::time_point<std::chrono::steady_clock> lasttime;
 
     int infr_count = 0;
     bool valid_pack = 0;

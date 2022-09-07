@@ -40,7 +40,7 @@ int devicez::motors_detect() {
     return motors_on;
 }
 
-void devicez::motors_write(int* vel_pack) {
+void devicez::motors_write(std::vector<int>& vel_pack) {
     for (int i=0; i<device_num; i++) {
         devices[i].writeByte(vel_pack[i]);
         // wiringPiI2CWrite(device[i], vel_pack[i]);
@@ -48,9 +48,7 @@ void devicez::motors_write(int* vel_pack) {
     }
     // Output
     if (i2c_testmode) {
-        std::cout << "motor speed: ";
-        for (int i=0; i<device_num; i++)    std::cout<< vel_pack[i] << " ";
-        std::cout << std::endl;
+        zos::log("motor write: {}\n", fmt::join(vel_pack, " "));
     }
 }
 

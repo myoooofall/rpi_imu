@@ -13,19 +13,12 @@ int main() {
     robotz zjunlict;
     zjunlict.testmode_on();
 
-    zjunlict.robot_num = 0x0f;
-
     while (1)
     {   
-        // Robot control
-        zjunlict.run();
-
         // Detect receive pack
         if (Received_packet) {
             zjunlict.regular_re();
         }
-        // period time test
-        // zjunlict.period_test();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

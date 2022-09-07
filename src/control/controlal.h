@@ -12,8 +12,21 @@
 
 class sensor{ 
 public:
+
+    double now_vx_from_sensor = 0;
+    double now_vy_from_sensor = 0;
+
     void monitor(){
-}
+
+        getVelocity();
+
+    }
+private:
+    double getVelocity(){
+
+        return now_vx_from_sensor,now_vy_from_sensor;
+
+    }
 
 };
 
@@ -25,6 +38,7 @@ private:
 
 
 public:
+
     rate(int frequency){
     start = std::chrono::steady_clock::now();
     expected_cycle_time_ = std::chrono::nanoseconds(1000000000)/frequency;
@@ -72,8 +86,6 @@ public:
     //control rate
     double control_rate =500;
     double dt =1/control_rate; //s
-
-
 
     //para
     double a_max = 20000;

@@ -31,9 +31,11 @@ public:
 
 protected:
     int device_num = MAX_MOTOR;
+    std::vector<int> vel_encoder = {0,0,0,0};
+    int adc_val;
+
     int Rx_buf[MAX_MOTOR];
     bool i2c_testmode = false;
-
     int test_charge_count = 0;
 
 private:

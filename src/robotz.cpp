@@ -248,7 +248,8 @@ void robotz::run() {
     zos::Rate robot_rate(config::robot_freq);
     while (true)
     {
-        i2c_d.motors_write(vel_pack);      // FIXME: delay period
+        // i2c_d.motors_write(vel_pack);
+        i2c_d.adc_test();
 
         //infrare
         // infrare_detect();
@@ -262,10 +263,10 @@ void robotz::run() {
         // TODO: Shoot and chip-need to determine time flag
         // if(chipshoot_timerdelay_flag < 1000)
         //     chipshoot_timerdelay_flag++;
-        Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
+        // Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
 
         robot_rate.sleep();
-        period_test();
+        // period_test();
     }
 }
 

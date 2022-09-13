@@ -22,9 +22,13 @@ public:
     void infrare_detect() override;
     void dribbler() override;
 
+    uint8_t shoot_test(uint8_t Robot_Boot_Power);
+    void adc_test();
+
 private:
-    ThreadPool i2c_th;
+    std::vector<std::jthread> i2c_th_single;
     int motors_i2c[MAX_MOTOR];
+    int adc_i2c;
 };
 
 #endif

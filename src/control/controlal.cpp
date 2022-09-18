@@ -1,18 +1,14 @@
 #include "controlal.h"
 
 using namespace std;
+using namespace config;
 
+controlal::controlal(Mode _mode):control_mode(_mode){
 
-controlal::controlal(Mode _mode){
-
-	control_mode = _mode;
 	std::thread controlThread(&controlal::local_planner_thread_func, this);
 	controlThread.detach();
 
 }
-
-
-
 
 void controlal::local_planner_thread_func(){ 
 
@@ -309,7 +305,7 @@ void controlal::compute(){
 
 			Mute.lock();
 			start_computing = true;
-			control_done = false;
+			control_done_flag = false;
 			compute_motion_2d(x1,v0_x,v1_x,y1,v0_y,v1_y,a_max,d_max,v_max,
 			traj_time_x,traj_time_acc_x,traj_time_dec_x,traj_time_flat_x,traj_time_y,traj_time_acc_y,
 			traj_time_dec_y,traj_time_flat_y,control_mode,dt);
@@ -318,11 +314,11 @@ void controlal::compute(){
 		} 
 		else{
 
-			if(!start_computing && !control_done){
+			if(!start_computing && !control_done_flag){
 			cout<<"no command"<<endl;
 			}
 			if(start_computing){
-			control_done = true;
+			control_done_flag = true;
 			start_computing = false;
 			cout<<"finished"<<endl;
 			}
@@ -342,23 +338,27 @@ void controlal::compute(){
 
 void controlal::debug(){
 
-	cout << "accTabel:" << endl;
-	for (int i = 0; i < accTable.size(); i++ )
-	{
-		cout << accTable[i] << " ";
-	}
+	if(CONTROL_DEBUGGER){
 
-	cout<<endl;
-	cout << endl << "velTable:" << endl;
-	for ( int i = 0; i < velTable.size(); i++ )
-	{
-		cout << velTable[i] << " ";
+		cout << "accTabel:" << endl;
+		for (int i = 0; i < accTable.size(); i++ )
+		{
+			cout << accTable[i] << " ";
+		}
+
+		cout<<endl;
+		cout << endl << "velTable:" << endl;
+		for ( int i = 0; i < velTable.size(); i++ )
+		{
+			cout << velTable[i] << " ";
+		}
+			cout <<endl << "posTable:" << endl;
+		for ( int i = 0; i < posTable.size(); i++ )
+		{
+			cout << posTable[i] << " ";
+		}
+		cout << endl;
+
 	}
-		cout <<endl << "posTable:" << endl;
-	for ( int i = 0; i < posTable.size(); i++ )
-	{
-		cout << posTable[i] << " ";
-	}
-	cout << endl;
 
 }

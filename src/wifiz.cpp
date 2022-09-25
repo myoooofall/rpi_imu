@@ -6,6 +6,7 @@ void _cb(const void* p,size_t lens) {
     // 更新最新数据包
     Received_packet = 1;
     std::copy(begin(s), end(s), std::begin(rxbuf));
+    rxbuf_proto.assign(static_cast<const char*>(p), lens);
 }
 
 wifi_comm::wifi_comm() {

@@ -82,13 +82,24 @@ int robotz::unpack(uint8_t *Packet) {
     return valid_pack;
 }
 
+bool robotz::unpack_proto(std::string proto_string) {
+    bool valid = false;
+    valid = comm_pack.ParseFromString(proto_string);
+    // zos::info("parsing protobuf\n");
+    if (valid) {
+        zos::info("Proto test Vx_package: {}\n", comm_pack.vx_package());
+        zos::info("Proto test Vy_package: {}\n", comm_pack.vy_package());
+    }
+    return valid;
+}
+
 void robotz::motion_planner() {
     int16_t acc_x = 0;
     int16_t acc_y = 0;
     double acc_whole = 0;
     double sin_x = 0;
     double sin_y = 0;
-    if(sqrt(Vx_package_last * Vx_package_last + Vy_package_last * Vy_package_last) > 325.0) {
+    if (sqrt(Vx_package_last * Vx_package_last + Vy_package_last * Vy_package_last) > 325.0) {
         acc_set = 25.0;	// 4.18 test
         DEC_FRAME++;
     }else {
@@ -159,7 +170,7 @@ void robotz::regular() {
 }
 
 bool robotz::regular_re() {
-    if (unpack(rxbuf)) {
+    if (unpack_proto(rxbuf_proto)) {
         // Correct package
         motion_planner();
         if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {

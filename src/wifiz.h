@@ -8,6 +8,7 @@
 
 extern uint16_t Received_packet;
 extern uint8_t rxbuf[25];
+extern std::string rxbuf_proto;
 extern std::mutex mutex_comm;
 
 class wifi_comm {

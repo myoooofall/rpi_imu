@@ -34,24 +34,27 @@ endif()
 
 find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Protobuf REQUIRED)
 
 include_directories(
     ${fmt_INCLUDE_DIRS}
+    ${Protobuf_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/share
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
 )
     
 set(LIBS
     ${LIBS}
+    ${Protobuf_LIBRARIES}
     Threads::Threads
     fmt::fmt
 )
 
 file(GLOB SHARED_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/share/control/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto/robot_comm.pb.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/wifiz.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/robotz.cpp
 )

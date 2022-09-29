@@ -10,6 +10,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/share
     ${CMAKE_CURRENT_SOURCE_DIR}/control
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/sensor
 )
 set(LIBS
     ${LIBS}

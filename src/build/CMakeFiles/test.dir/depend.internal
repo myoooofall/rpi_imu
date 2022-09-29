@@ -3,6 +3,7 @@
 
 CMakeFiles/test.dir/control/controlal.cpp.o
  ../sensor/sensor.h
+ ../share/zos/project/core/include/zos/utils/rate.h
  /home/pi/Desktop/Turing/src/control/config.h
  /home/pi/Desktop/Turing/src/control/controlal.cpp
  /home/pi/Desktop/Turing/src/control/controlal.h
@@ -10,4 +11,5 @@ CMakeFiles/test.dir/unit_test/test_controlal.cpp.o
  ../control/config.h
  ../control/controlal.h
  ../sensor/sensor.h
+ ../share/zos/project/core/include/zos/utils/rate.h
  /home/pi/Desktop/Turing/src/unit_test/test_controlal.cpp

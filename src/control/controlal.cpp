@@ -2,6 +2,7 @@
 
 using namespace std;
 using namespace config;
+using namespace zos;
 
 controlal::controlal(Mode _mode):control_mode(_mode){
 
@@ -12,7 +13,7 @@ controlal::controlal(Mode _mode):control_mode(_mode){
 
 void controlal::local_planner_thread_func(){ 
 
-	rate Rate(control_rate);
+	Rate rate(control_rate);
 
 	while(1){
 
@@ -20,7 +21,7 @@ void controlal::local_planner_thread_func(){
 			reset();	
 		}
 		compute();
-		Rate.sleep();
+		rate.sleep();
 	}
 
 }

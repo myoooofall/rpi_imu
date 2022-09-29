@@ -11,6 +11,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/control
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test
     ${CMAKE_CURRENT_SOURCE_DIR}/sensor
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
 )
 set(LIBS
     ${LIBS}

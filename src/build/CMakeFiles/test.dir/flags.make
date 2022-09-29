@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/pi/Desktop/Turing/src/share -I/home/pi/Desktop/Turing/src/control -I/home/pi/Desktop/Turing/src/unit_test -I/home/pi/Desktop/Turing/src/sensor
+CXX_INCLUDES = -I/home/pi/Desktop/Turing/src/share -I/home/pi/Desktop/Turing/src/control -I/home/pi/Desktop/Turing/src/unit_test -I/home/pi/Desktop/Turing/src/sensor -I/home/pi/Desktop/Turing/src/share/zos/project/core/include
 
 CXX_FLAGS =  -std=c++20 -std=gnu++2a
 

@@ -11,24 +11,26 @@
 #include <mutex>
 #include "config.h"
 #include "sensor.h"
-class rate{
-private:
-    std::chrono::time_point<std::chrono::steady_clock> start;
-    std::chrono::duration<int, std::nano>expected_cycle_time_;
-public:
-    rate(int frequency){
-    start = std::chrono::steady_clock::now();
-    expected_cycle_time_ = std::chrono::nanoseconds(1000000000)/frequency;
-    }
-    bool sleep(){
-    std::this_thread::sleep_until(start+ expected_cycle_time_);
-    start = std::chrono::steady_clock::now();
-    return true;
-    };
-    void reset(){
-    start = std::chrono::steady_clock::now();
-    }
-};
+#include "zos/utils/rate.h"
+
+// class rate{
+// private:
+//     std::chrono::time_point<std::chrono::steady_clock> start;
+//     std::chrono::duration<int, std::nano>expected_cycle_time_;
+// public:
+//     rate(int frequency){
+//     start = std::chrono::steady_clock::now();
+//     expected_cycle_time_ = std::chrono::nanoseconds(1000000000)/frequency;
+//     }
+//     bool sleep(){
+//     std::this_thread::sleep_until(start+ expected_cycle_time_);
+//     start = std::chrono::steady_clock::now();
+//     return true;
+//     };
+//     void reset(){
+//     start = std::chrono::steady_clock::now();
+//     }
+// };
 class controlal{
 public:
     enum Mode {

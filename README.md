@@ -2,5 +2,5 @@
 Dependence:
 	Threads
 	ZOS::rate
-        c++ 20
+	gcc-11
 

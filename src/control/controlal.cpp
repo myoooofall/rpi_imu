@@ -233,7 +233,7 @@ double controlal::get_t_max(double x1, double v0, double v1,
 
 void controlal::compute_motion_2d(double &x1, double &v0_x, double v1_x, 
                                   double &y1, double &v0_y, double v1_y,
-const double a_max, const double d_max, const double v_max,
+                                const double a_max, const double d_max, const double v_max,
                                 double &traj_time_x, double &traj_time_acc_x, double &traj_time_dec_x, double &traj_time_flat_x,
                                 double &traj_time_y, double &traj_time_acc_y, double &traj_time_dec_y, double &traj_time_flat_y,
                                 Mode mode,double dt){

@@ -9,9 +9,7 @@
 #include <cmath>
 #include <chrono>
 #include <mutex>
-#include "config.h"
-#include "sensor.h"
-#include "zos/utils/rate.h"
+#include "robotz.h"
 
 // class rate{
 // private:

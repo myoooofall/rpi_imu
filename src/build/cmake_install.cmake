@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/Desktop/Turing/src
+# Install script for directory: /home/ubuntu/test/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/pi/Desktop/Turing/src/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/ubuntu/test/src/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

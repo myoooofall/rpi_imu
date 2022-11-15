@@ -2,6 +2,7 @@
 #define ROBOT_H
 
 #include "wifiz.h"
+#include "robot_comm.pb.h"
 // #include "controlal.h"
 
 #ifdef ROCKPIS_VERSION
@@ -65,6 +66,7 @@ public:
 
     void pack(std::vector<uint8_t> &TX_Packet);
     int unpack(uint8_t *Packet);
+    bool unpack_proto(std::string proto_string);
     void motion_planner();
     void shoot_chip();
 
@@ -79,6 +81,7 @@ public:
     void period_test();
 
 private:
+    robot_comm::Robot comm_pack; 
     std::vector<int> vel_pack = {0,0,0,0};
     std::vector<uint8_t> TX_Packet = {
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,  //[0-8]

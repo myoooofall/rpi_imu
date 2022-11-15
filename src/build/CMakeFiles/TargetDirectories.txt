@@ -1,5 +1,5 @@
-/home/pi/Desktop/Turing/src/build/CMakeFiles/edit_cache.dir
-/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_motors.dir
-/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir
-/home/pi/Desktop/Turing/src/build/CMakeFiles/rebuild_cache.dir
-/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_comm.dir
+/home/ubuntu/test/src/build/CMakeFiles/unit_test_comm.dir
+/home/ubuntu/test/src/build/CMakeFiles/unit_test_controlal.dir
+/home/ubuntu/test/src/build/CMakeFiles/unit_test_motors.dir
+/home/ubuntu/test/src/build/CMakeFiles/edit_cache.dir
+/home/ubuntu/test/src/build/CMakeFiles/rebuild_cache.dir

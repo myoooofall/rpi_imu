@@ -1,12 +1,14 @@
 file(REMOVE_RECURSE
   "CMakeFiles/unit_test_comm.dir/control/controlal.cpp.o"
+  "CMakeFiles/unit_test_comm.dir/control/controlal.cpp.o.d"
   "CMakeFiles/unit_test_comm.dir/robot/device_CM4.cpp.o"
-  "CMakeFiles/unit_test_comm.dir/robot/device_ROCKS.cpp.o"
+  "CMakeFiles/unit_test_comm.dir/robot/device_CM4.cpp.o.d"
   "CMakeFiles/unit_test_comm.dir/robot/robotz.cpp.o"
+  "CMakeFiles/unit_test_comm.dir/robot/robotz.cpp.o.d"
   "CMakeFiles/unit_test_comm.dir/robot/wifiz.cpp.o"
+  "CMakeFiles/unit_test_comm.dir/robot/wifiz.cpp.o.d"
   "CMakeFiles/unit_test_comm.dir/unit_test/test_comm.cpp.o"
-  "CMakeFiles/unit_test_comm.dir/unit_test/test_controlal.cpp.o"
-  "CMakeFiles/unit_test_comm.dir/unit_test/test_motors.cpp.o"
+  "CMakeFiles/unit_test_comm.dir/unit_test/test_comm.cpp.o.d"
   "unit_test_comm"
   "unit_test_comm.pdb"
 )

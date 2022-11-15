@@ -1,6 +1,15 @@
 #include "controlal.h"
 using namespace std;
 using namespace zos;
+
+uint16_t Received_packet = 0;
+uint32_t Total_Missed_Package_Num = 0;
+
+uint8_t rxbuf[25] = {0x0};
+
+std::mutex mutex_comm;
+
+
 int main(){
     
     controlal control(controlal::Mode::RealTime);

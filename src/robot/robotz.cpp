@@ -82,13 +82,24 @@ int robotz::unpack(uint8_t *Packet) {
     return valid_pack;
 }
 
+bool robotz::unpack_proto(std::string proto_string) {
+    bool valid = false;
+    valid = comm_pack.ParseFromString(proto_string);
+    // zos::info("parsing protobuf\n");
+    if (valid) {
+        zos::info("Proto test Vx_package: {}\n", comm_pack.vx_package());
+        zos::info("Proto test Vy_package: {}\n", comm_pack.vy_package());
+    }
+    return valid;
+}
+
 void robotz::motion_planner() {
     int16_t acc_x = 0;
     int16_t acc_y = 0;
     double acc_whole = 0;
     double sin_x = 0;
     double sin_y = 0;
-    if(sqrt(Vx_package_last * Vx_package_last + Vy_package_last * Vy_package_last) > 325.0) {
+    if (sqrt(Vx_package_last * Vx_package_last + Vy_package_last * Vy_package_last) > 325.0) {
         acc_set = 25.0;	// 4.18 test
         DEC_FRAME++;
     }else {
@@ -159,7 +170,7 @@ void robotz::regular() {
 }
 
 bool robotz::regular_re() {
-    if (unpack(rxbuf)) {
+    if (unpack_proto(rxbuf_proto)) {
         // Correct package
         motion_planner();
         if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
@@ -248,7 +259,8 @@ void robotz::run() {
     zos::Rate robot_rate(config::robot_freq);
     while (true)
     {
-        i2c_d.motors_write(vel_pack);      // FIXME: delay period
+        // i2c_d.motors_write(vel_pack);
+        i2c_d.adc_test();
 
         //infrare
         // infrare_detect();
@@ -262,10 +274,10 @@ void robotz::run() {
         // TODO: Shoot and chip-need to determine time flag
         // if(chipshoot_timerdelay_flag < 1000)
         //     chipshoot_timerdelay_flag++;
-        Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
+        // Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
 
         robot_rate.sleep();
-        period_test();
+        // period_test();
     }
 }
 

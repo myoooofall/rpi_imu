@@ -1,7 +1,9 @@
 #include "device_CM4.h"
 
-devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th(num) {
+devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     motors_device(num, i2c_addr_t);
+    adc_i2c = wiringPiI2CSetup(config::adc_addr);
+    wiringPiI2CWrite(adc_i2c, 0x40);
 
     // shoot
     pinMode(GPIO_CHARGE, OUTPUT);
@@ -33,32 +35,31 @@ void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
 int devicez::motors_detect() {
     int motors_on = 0;
     for (int i=0; i<device_num; i++) {
-        Rx_buf[i] = wiringPiI2CRead(motors_i2c[i]); // TODO: read specific bits
-        if (Rx_buf[i] != -1)    motors_on++;
+        vel_encoder[i] = wiringPiI2CRead(motors_i2c[i]); // TODO: read specific bits
+        if (vel_encoder[i] != -1)    motors_on++;
     }
     if (i2c_testmode && motors_on) {
-        // Output
-        // std::cout << "huibao: ";
-        // for (int i=0; i<device_num; i++)    std::cout<< Rx_buf[i] << " ";
-        // std::cout << std::endl;
-        // std::string motor_str;
-        zos::log("motor status: {}\n", fmt::ptr(&Rx_buf));
+        zos::status("motor encoder: {}\n", fmt::join(vel_encoder, " "));
     }
     return motors_on;
 }
 
 void devicez::motors_write(std::vector<int>& vel_pack) {
     for (int i=0; i<device_num; i++) {
-        i2c_th.enqueue(&devicez::motors_write_single, this, i, abs(vel_pack[i]));
+        i2c_th_single[i] = std::jthread(&devicez::motors_write_single, this, i, abs(vel_pack[i]));
+        // i2c_th_single[i].join();
     }
     // Output
     if (i2c_testmode) {
         zos::log("motor write: {}\n", fmt::join(vel_pack, " "));
+        zos::status("motor encoder: {}\n", fmt::join(vel_encoder, " "));
     }
 }
 
 void devicez::motors_write_single(int motor_id, int vel) {
     wiringPiI2CWrite(motors_i2c[motor_id], abs(vel));
+    // zos::log("motor id: {}, vel: {}\n", motor_id, vel);
+    vel_encoder[motor_id] = wiringPiI2CRead(motors_i2c[motor_id]); // TODO: read specific bits
 }
 
 uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) {
@@ -82,6 +83,21 @@ uint8_t devicez::shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Po
         zos::info("shoot");
     }
     return Robot_Is_Boot_charged;
+}
+
+uint8_t devicez::shoot_test(uint8_t Robot_Boot_Power) {
+    if(Robot_Boot_Power > 0) {
+        pwmWrite(PWM0_SHOOT, Robot_Boot_Power);
+        test_charge_count = 0;
+        zos::info("shoot");
+    }
+    pwmWrite(PWM0_SHOOT, 0);
+    return 0;
+}
+
+void devicez::adc_test() {
+    adc_val = wiringPiI2CRead(adc_i2c);
+    zos::status("adc value: {}\n", adc_val);
 }
 
 void devicez::infrare_detect() {}

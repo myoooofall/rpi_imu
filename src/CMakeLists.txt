@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.14)
-
 # chip option
 option(CM4_VERSION "compile for CM4" ON)
 option(ROCKS_VERSION "compile for ROCKS" OFF)
@@ -9,13 +8,11 @@ if(ROCKS_VERSION)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif()
 
-
 project(S01 LANGUAGES CXX)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,11 +34,23 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
+find_package(Protobuf REQUIRED)
+
+find_library(RF24 rf24 REQUIRED)
+message(STATUS "using RF24 library: ${RF24}")
+
+# detect the CPU make and type
+include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
+
+# auto-detect what driver to use
+# auto-detect can be overriden using `cmake .. -D RF24_DRIVER=<supported driver>`
+include(cmake/AutoConfig_RF24_DRIVER.cmake)
 
 include_directories(
+    ${fmt_INCLUDE_DIRS}
+    ${Protobuf_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/share
     ${CMAKE_CURRENT_SOURCE_DIR}/control
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test
     ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/robot
@@ -49,27 +58,31 @@ include_directories(
 )
 set(LIBS
     ${LIBS}
+    ${Protobuf_LIBRARIES}
     Threads::Threads
     fmt::fmt
+    ${RF24}
+    ${LibPIGPIO}
 )
 file(GLOB SHARED_SOURCE_FILES
     ${SHARED_SOURCE_FILES}
     ${CMAKE_CURRENT_SOURCE_DIR}/share/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/control/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/robot/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/robotz.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/wifiz.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/nrf2401.cpp
 )
 # chip option
 if(CM4_VERSION)
     file(GLOB SHARED_SOURCE_FILES
         ${SHARED_SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/device_CM4.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_CM4.cpp
     )
 elseif(ROCKS_VERSION)
     file(GLOB SHARED_SOURCE_FILES
         ${SHARED_SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/device_ROCKS.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_ROCKS.cpp
     )
 endif()
 

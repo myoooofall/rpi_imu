@@ -1,36 +1,18 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
-  "CXX"
-  )
-# The set of files for implicit dependencies of each language:
-set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/pi/Desktop/Turing/src/control/controlal.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/control/controlal.cpp.o"
-  "/home/pi/Desktop/Turing/src/robot/device_CM4.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/robot/device_CM4.cpp.o"
-  "/home/pi/Desktop/Turing/src/robot/device_ROCKS.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/robot/device_ROCKS.cpp.o"
-  "/home/pi/Desktop/Turing/src/robot/robotz.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/robot/robotz.cpp.o"
-  "/home/pi/Desktop/Turing/src/robot/wifiz.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/robot/wifiz.cpp.o"
-  "/home/pi/Desktop/Turing/src/unit_test/test_comm.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/unit_test/test_comm.cpp.o"
-  "/home/pi/Desktop/Turing/src/unit_test/test_controlal.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/unit_test/test_controlal.cpp.o"
-  "/home/pi/Desktop/Turing/src/unit_test/test_motors.cpp" "/home/pi/Desktop/Turing/src/build/CMakeFiles/unit_test_controlal.dir/unit_test/test_motors.cpp.o"
-  )
-set(CMAKE_CXX_COMPILER_ID "GNU")
-
-# Preprocessor definitions for this target.
-set(CMAKE_TARGET_DEFINITIONS_CXX
-  "CM4_VERSION"
-  "FMT_LOCALE"
-  "FMT_SHARED"
   )
 
-# The include file search paths:
-set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "../share"
-  "../control"
-  "../unit_test"
-  "../share/zos/project/core/include"
-  "../share/utils"
-  "../robot"
-  "../"
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/ubuntu/test/src/control/controlal.cpp" "CMakeFiles/unit_test_controlal.dir/control/controlal.cpp.o" "gcc" "CMakeFiles/unit_test_controlal.dir/control/controlal.cpp.o.d"
+  "/home/ubuntu/test/src/robot/device_CM4.cpp" "CMakeFiles/unit_test_controlal.dir/robot/device_CM4.cpp.o" "gcc" "CMakeFiles/unit_test_controlal.dir/robot/device_CM4.cpp.o.d"
+  "/home/ubuntu/test/src/robot/robotz.cpp" "CMakeFiles/unit_test_controlal.dir/robot/robotz.cpp.o" "gcc" "CMakeFiles/unit_test_controlal.dir/robot/robotz.cpp.o.d"
+  "/home/ubuntu/test/src/robot/wifiz.cpp" "CMakeFiles/unit_test_controlal.dir/robot/wifiz.cpp.o" "gcc" "CMakeFiles/unit_test_controlal.dir/robot/wifiz.cpp.o.d"
+  "/home/ubuntu/test/src/unit_test/test_controlal.cpp" "CMakeFiles/unit_test_controlal.dir/unit_test/test_controlal.cpp.o" "gcc" "CMakeFiles/unit_test_controlal.dir/unit_test/test_controlal.cpp.o.d"
   )
 
 # Targets to which this target links.

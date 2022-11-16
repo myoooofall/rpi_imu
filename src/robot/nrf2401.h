@@ -17,7 +17,6 @@
 
 // extern uint16_t Received_packet;
 // extern uint8_t rxbuf[25];
-extern std::mutex mutex_comm;
 
 /****************** Linux ***********************/
 // Radio CE Pin, CSN Pin, SPI Speed
@@ -42,8 +41,11 @@ public:
         std::jthread th_comm(&comm_2401::comm_2401_test, this);
         th_comm.detach();
     };
-    void get_receive_flag();
+    bool get_receive_flag();
+    void set_receive_flag();
+    uint8_t* get_rxbuf();
 
+    std::mutex mutex_comm_2401;
 
 private:
     RF24 radio_TX;
@@ -53,7 +55,7 @@ private:
     int comm_2401_test();
 
     bool receive_flag = false;
-    void set_receive_flag();
+    uint8_t rxbuf[MAX_SIZE] = {0x0};
 
     static void HexToAscii(unsigned char * pHex, char * pAscii, int nLen);
 };

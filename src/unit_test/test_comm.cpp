@@ -6,6 +6,7 @@ uint32_t Total_Missed_Package_Num = 0;
 bool received_packet_flag;
 
 uint8_t rxbuf[25] = {0x0};
+std::string rxbuf_proto;
 
 std::mutex mutex_comm;
 

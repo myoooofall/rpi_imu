@@ -49,7 +49,7 @@ include(cmake/AutoConfig_RF24_DRIVER.cmake)
 include_directories(
     ${fmt_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto
     ${CMAKE_CURRENT_SOURCE_DIR}/control
     ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
@@ -66,7 +66,7 @@ set(LIBS
 )
 file(GLOB SHARED_SOURCE_FILES
     ${SHARED_SOURCE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto/robot_comm.pb.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/control/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/robot/robotz.cpp

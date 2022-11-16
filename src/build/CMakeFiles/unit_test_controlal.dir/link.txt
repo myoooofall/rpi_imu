@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++20 CMakeFiles/unit_test_controlal.dir/unit_test/test_controlal.cpp.o CMakeFiles/unit_test_controlal.dir/control/controlal.cpp.o CMakeFiles/unit_test_controlal.dir/robot/device_CM4.cpp.o CMakeFiles/unit_test_controlal.dir/robot/robotz.cpp.o CMakeFiles/unit_test_controlal.dir/robot/wifiz.cpp.o -o unit_test_controlal  -lwiringPi /usr/local/lib/libfmt.a 

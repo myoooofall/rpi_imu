@@ -11,6 +11,10 @@ bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to tra
 static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: PC
 
 void comm_2401::init_2401(RF24* radio) {
+    // radio->powerDown();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    // radio->powerUp();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(5));
     // perform hardware check
     if (!radio->begin()) {
         std::cout << "radio hardware is not responding!!" << std::endl;
@@ -67,9 +71,8 @@ int comm_2401::comm_2401_test() {
     
     while (true)
     {
-        unsigned char rxbuf[MAX_SIZE] = {0x0};
 
-        zos::log("comm 2401 count :{}\n", status_count++);
+        // zos::log("comm 2401 count :{}\n", status_count++);
         // TODO: restart?
         // if (status_count > 50000) {
         //     socket_rx.send_to("device on: 10.12.225.200", multicast_ep);
@@ -80,8 +83,11 @@ int comm_2401::comm_2401_test() {
         
         if (radio_RX.available()) {                        // is there a payload? get the pipe number that recieved it
             // uint8_t bytes = radio_RX.getPayloadSize();          // get the size of the payload
-            std::scoped_lock lock(mutex_comm);
+            std::scoped_lock lock(mutex_comm_2401);
+            // zos::log("new pack\n");
             radio_RX.read(rxbuf, MAX_SIZE);                     // fetch payload from FIFO
+            receive_flag = true;
+
             std::string str(rxbuf,rxbuf+MAX_SIZE);
 
             // socket_rx.send_to(str, receiver_endpoint_rx);
@@ -92,14 +98,14 @@ int comm_2401::comm_2401_test() {
             std::string ascii(pAscii);
             // cout << str << endl;
 
-            if (radio_RX.getChannel()==24) {
-                cout << "Freq: " << 6;
-            } else {
-                cout << "Freq: " << 8;
-            }
+            // if (radio_RX.getChannel()==24) {
+            //     cout << "Freq: " << 6;
+            // } else {
+            //     cout << "Freq: " << 8;
+            // }
             // cout << "; Receive Package: " << ascii << endl;
-            int robot_num = rxbuf[2] & 0x0f;
-            cout << "; Robot: " << robot_num << endl;
+            // int robot_num = rxbuf[2] & 0x0f;
+            // cout << "; Robot: " << robot_num << endl;
             // int Wheel[4];
             // Wheel[0] = rxbuf[6]*256 + rxbuf[7];
             // Wheel[1] = rxbuf[8]*256 + rxbuf[9];
@@ -141,4 +147,17 @@ void comm_2401::HexToAscii(unsigned char * pHex, char * pAscii, int nLen)
             *pAscii++ = Nibble[j];
         }	// for (int j = ...)
     }	// for (int i = ...)
+}
+
+bool comm_2401::get_receive_flag() {
+    return receive_flag;
+}
+
+void comm_2401::set_receive_flag() {
+    receive_flag = false;
+}
+
+uint8_t* comm_2401::get_rxbuf() {
+    std::scoped_lock lock(mutex_comm_2401);
+    return rxbuf;
 }

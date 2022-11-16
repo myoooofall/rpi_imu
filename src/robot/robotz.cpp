@@ -135,6 +135,8 @@ void robotz::motion_planner() {
     vel_pack[1] = ((sin_angle[1]) * Vx_package + (cos_angle[1]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
     vel_pack[2] = ((sin_angle[2]) * Vx_package + (cos_angle[2]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
     vel_pack[3] = ((sin_angle[3]) * Vx_package + (cos_angle[3]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
+
+    zos::info("vel_pack: {} {}\n", vel_pack[0], vel_pack[1]);
 }
 
 void robotz::stand() {
@@ -145,32 +147,34 @@ void robotz::stand() {
     Robot_drib = 0;
                     
     std::fill_n(begin(vel_pack), MAX_MOTOR, 0);
+    #ifndef OLD_VERSION
     wifiz.udp_restart();
+    #endif
 }
 
-void robotz::regular() {
-    motion_planner();
-    if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
-        Left_Report_Package = 4;
-        Last_Robot_Status = Robot_Status;
-    }
+// void robotz::regular() {
+//     motion_planner();
+//     if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
+//         Left_Report_Package = 4;
+//         Last_Robot_Status = Robot_Status;
+//     }
     
-    if(Kick_Count > 0)
-        Kick_Count--;
-    else
-        Robot_Status &= 0xCF;
+//     if(Kick_Count > 0)
+//         Kick_Count--;
+//     else
+//         Robot_Status &= 0xCF;
         
-    if(Left_Report_Package > 0 || Kick_Count > 0){
-        pack(TX_Packet);
-        wifiz.udp_sender(TX_Packet);
-        transmitted_packet++;
-    }
+//     if(Left_Report_Package > 0 || Kick_Count > 0){
+//         pack(TX_Packet);
+//         wifiz.udp_sender(TX_Packet);
+//         transmitted_packet++;
+//     }
 
-    if(Left_Report_Package > 0)   Left_Report_Package --;
-}
+//     if(Left_Report_Package > 0)   Left_Report_Package --;
+// }
 
 bool robotz::regular_re() {
-    if (unpack_proto(rxbuf_proto)) {
+    if (unpack(rxbuf)) {
         // Correct package
         motion_planner();
         if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
@@ -185,7 +189,9 @@ bool robotz::regular_re() {
             
         if(Left_Report_Package > 0 || Kick_Count > 0){
             pack(TX_Packet);
+            #ifndef OLD_VERSION
             wifiz.udp_sender(TX_Packet);
+            #endif
             transmitted_packet++;
         }
 
@@ -259,8 +265,8 @@ void robotz::run() {
     zos::Rate robot_rate(config::robot_freq);
     while (true)
     {
-        // i2c_d.motors_write(vel_pack);
-        i2c_d.adc_test();
+        i2c_d.motors_write(vel_pack);
+        // i2c_d.adc_test();
 
         //infrare
         // infrare_detect();

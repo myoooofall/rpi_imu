@@ -3,6 +3,7 @@
 
 #include "wifiz.h"
 #include "robot_comm.pb.h"
+#include "sensor.h"
 // #include "controlal.h"
 
 #ifdef ROCKPIS_VERSION
@@ -15,8 +16,9 @@ class robotz {
 public:
     robotz(int motor_num=4);
     uint8_t robot_num = config::robot_id;
-    
+    #ifndef OLD_VERSION
     wifi_comm wifiz;
+    #endif
     devicez i2c_d;
     int test_motor_num = 2;
     uint8_t motor_addr[4] = {0x28,0x29,0x30,0x31};

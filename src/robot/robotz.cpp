@@ -1,6 +1,6 @@
 #include "robotz.h"
 
-robotz::robotz(int motor_num) : i2c_d(motor_num), thpool(1) {
+robotz::robotz(int motor_num) : i2c_d(motor_num), control(controlal::Mode::RealTime), thpool(1) {
     // Motor Init
     // TODO: change to while
     int motors_num = i2c_d.motors_detect();
@@ -10,7 +10,7 @@ robotz::robotz(int motor_num) : i2c_d(motor_num), thpool(1) {
         std::cout << motors_num << " motor detected!" << std::endl;
     }
     // bangbang.control_init();
-
+    
     thpool.enqueue(&robotz::run, this);
 }
 
@@ -136,7 +136,7 @@ void robotz::motion_planner() {
     vel_pack[2] = ((sin_angle[2]) * Vx_package + (cos_angle[2]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
     vel_pack[3] = ((sin_angle[3]) * Vx_package + (cos_angle[3]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
 
-    zos::info("vel_pack: {} {}\n", vel_pack[0], vel_pack[1]);
+    zos::info("vel_pack: {} {} {} {}\n", vel_pack[0], vel_pack[1], vel_pack[2], vel_pack[3]);    
 }
 
 void robotz::stand() {

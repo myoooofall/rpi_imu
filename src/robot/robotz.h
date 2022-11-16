@@ -3,7 +3,7 @@
 
 #include "wifiz.h"
 #include "robot_comm.pb.h"
-#include "sensor.h"
+#include "controlal.h"
 // #include "controlal.h"
 
 #ifdef ROCKPIS_VERSION
@@ -89,7 +89,8 @@ private:
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,  //[0-8]
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,        //[9-16]
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};       //[17-24]
-
+    
+    controlal control;
     ThreadPool thpool;
 
     int test_charge_count = 0;

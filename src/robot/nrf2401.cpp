@@ -122,8 +122,7 @@ int comm_2401::comm_2401_test() {
             // cout << "Send to: " << receiver_endpoint_rx.address().to_string() << "Receive Package: " << str << endl;
         }else if(status_count > 10) {
             std::scoped_lock lock(mutex_comm_2401);
-            // change_mode_to_RX();
-            radio_RX.startListening();
+            change_mode_to_RX();
             status_count = 0;
         }else {
             std::this_thread::sleep_for(std::chrono::microseconds(500));
@@ -175,16 +174,22 @@ void comm_2401::change_mode() {
 void comm_2401::change_mode_to_TX() {
     // enable TX
     mode = TX;
-    digitalWrite(8, HIGH);
-    digitalWrite(7, LOW);
+    radio_RX.endTransaction();
+    radio_TX.beginTransaction();
+    radio_TX.stopListening();
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
     // zos::log("change mode to TX\n");
 }
 
 void comm_2401::change_mode_to_RX() {
     // enable RX
     mode = RX;
-    digitalWrite(7, HIGH);
-    digitalWrite(8, LOW);
+    radio_TX.endTransaction();
+    radio_RX.beginTransaction();
+    radio_RX.startListening();
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
+    // gpioWrite(7, HIGH);
+    // gpioWrite(8, LOW);
     // zos::log("change mode to RX\n");
 }
 
@@ -193,10 +198,9 @@ void comm_2401::send(const void* tx_buf) {
     std::scoped_lock lock(mutex_comm_2401);
     // radio_RX.stopListening();
     change_mode();
-    radio_RX.stopListening();   // put radio_TX in TX mode
-    radio_RX.write(tx_buf, MAX_SIZE);
+    radio_TX.stopListening();   // put radio_TX in TX mode
+    radio_TX.write(tx_buf, MAX_SIZE);
     zos::log("send data :{}\n", tx_buf);
 
-    change_mode();
-    radio_RX.startListening();
+    change_mode_to_RX();
 }

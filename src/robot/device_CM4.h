@@ -24,6 +24,7 @@ public:
 
     uint8_t shoot_test(uint8_t Robot_Boot_Power);
     void adc_test();
+    float adc_cap_vol();
 
 private:
     std::vector<std::jthread> i2c_th_single;

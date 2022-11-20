@@ -29,6 +29,9 @@
 class comm_2401 {
 public:
     comm_2401() : radio_TX(config::radio_tx_ce_pin, config::radio_tx_csn),radio_RX(config::radio_rx_ce_pin, config::radio_rx_csn) {
+        wiringPiSetup();
+        pinMode(config::radio_tx_ce_pin, OUTPUT);
+        pinMode(config::radio_rx_ce_pin, OUTPUT);
         init_2401(&radio_TX);
         init_2401(&radio_RX);
         // put radio_TX in TX mode
@@ -41,6 +44,7 @@ public:
         std::jthread th_comm(&comm_2401::comm_2401_test, this);
         th_comm.detach();
     };
+    void send(const void* tx_buf);
     bool get_receive_flag();
     void set_receive_flag();
     uint8_t* get_rxbuf();

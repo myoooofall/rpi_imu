@@ -10,8 +10,8 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     pinMode(PWM0_SHOOT, PWM_OUTPUT);
     pwmSetClock(320);
     // infrare
-    pinMode(GPIO_INFRARE_OUT, INPUT);
-    pinMode(GPIO_INFRARE_IN, OUTPUT);
+    // pinMode(GPIO_INFRARE_OUT, INPUT);
+    // pinMode(GPIO_INFRARE_IN, OUTPUT);
 }
 
 void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
@@ -96,8 +96,18 @@ uint8_t devicez::shoot_test(uint8_t Robot_Boot_Power) {
 }
 
 void devicez::adc_test() {
+    wiringPiI2CWrite(adc_i2c, 0x41);
+
     adc_val = wiringPiI2CRead(adc_i2c);
     zos::status("adc value: {}\n", adc_val);
+}
+
+float devicez::adc_cap_vol() {
+    wiringPiI2CWrite(adc_i2c, 0x40);
+    adc_val = wiringPiI2CRead(adc_i2c);
+    float cap_vol = adc_val * config::adc_cap_vol_k;
+    zos::status("cap voltage: {}\n", cap_vol);
+    return cap_vol;
 }
 
 void devicez::infrare_detect() {}

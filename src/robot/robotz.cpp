@@ -10,6 +10,9 @@ robotz::robotz(int motor_num) : i2c_d(motor_num), control(controlal::Mode::RealT
         std::cout << motors_num << " motor detected!" << std::endl;
     }
     // bangbang.control_init();
+    #ifdef OLD_VERSION
+    comm.start();
+    #endif
     
     thpool.enqueue(&robotz::run, this);
 }
@@ -191,6 +194,8 @@ bool robotz::regular_re() {
             pack(TX_Packet);
             #ifndef OLD_VERSION
             wifiz.udp_sender(TX_Packet);
+            #else
+            comm.send(std::data(TX_Packet));
             #endif
             transmitted_packet++;
         }
@@ -259,6 +264,7 @@ void robotz::pack(std::vector<uint8_t> &TX_Packet){
     TX_Packet[11] = (temp3 & 0xFF);
     TX_Packet[12] = (temp4 & 0xFF00)>>8;
     TX_Packet[13] = (temp4 & 0xFF);
+    zos::log("tx package: {}\n", TX_Packet[0]);
 }
 
 void robotz::run() {

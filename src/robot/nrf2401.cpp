@@ -26,7 +26,7 @@ void comm_2401::init_2401(RF24* radio) {
     radio->setChannel(tx_frequency);    // RF_CH; Freq 6: 24; Freq 8: 90
     radio->setPayloadSize(MAX_SIZE);    // RX_PW_P0
     radio->setDataRate(RF24_1MBPS);     // RF_SETUP
-    radio->setPALevel(RF24_PA_HIGH);    // RF24_PA_MAX is default.
+    radio->setPALevel(RF24_PA_LOW);    // RF24_PA_MAX is default.
     // set the TX address of the RX node into the TX pipe
     radio->openWritingPipe(address[radioNumber]);     // always uses pipe 0
 
@@ -121,6 +121,7 @@ int comm_2401::comm_2401_test() {
             // cout << str.length() << endl;
             // cout << "Send to: " << receiver_endpoint_rx.address().to_string() << "Receive Package: " << str << endl;
         } else {
+            radio_RX.startListening();
             std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
     }
@@ -160,4 +161,10 @@ void comm_2401::set_receive_flag() {
 uint8_t* comm_2401::get_rxbuf() {
     std::scoped_lock lock(mutex_comm_2401);
     return rxbuf;
+}
+
+void comm_2401::send(const void* tx_buf) {
+    // radio_RX.stopListening();
+    // radio_TX.stopListening();   // put radio_TX in TX mode
+    radio_TX.write(tx_buf, MAX_SIZE);
 }

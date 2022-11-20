@@ -7,7 +7,7 @@ uint8_t tx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
 uint8_t rx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
 uint8_t bandwidth = 25;  //24L01带宽
 
-bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
+static bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: PC
 
 void comm_2401::init_2401(RF24* radio) {
@@ -71,14 +71,13 @@ int comm_2401::comm_2401_test() {
     
     while (true)
     {
-
-        // zos::log("comm 2401 count :{}\n", status_count++);
+        // zos::log("comm 2401 alive :{}\n", status_count++);
         // TODO: restart?
         // if (status_count > 50000) {
         //     socket_rx.send_to("device on: 10.12.225.200", multicast_ep);
         //     status_count = 0;
         // }
-        // status_count++;
+        status_count++;
         // uint8_t pipe;
         
         if (radio_RX.available()) {                        // is there a payload? get the pipe number that recieved it
@@ -96,6 +95,7 @@ int comm_2401::comm_2401_test() {
             char pAscii[MAX_SIZE];
             HexToAscii(rxbuf, pAscii, MAX_SIZE);
             std::string ascii(pAscii);
+            status_count = 0;
             // cout << str << endl;
 
             // if (radio_RX.getChannel()==24) {
@@ -120,8 +120,12 @@ int comm_2401::comm_2401_test() {
             
             // cout << str.length() << endl;
             // cout << "Send to: " << receiver_endpoint_rx.address().to_string() << "Receive Package: " << str << endl;
-        } else {
+        }else if(status_count > 10) {
+            std::scoped_lock lock(mutex_comm_2401);
+            // change_mode_to_RX();
             radio_RX.startListening();
+            status_count = 0;
+        }else {
             std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
     }
@@ -163,8 +167,36 @@ uint8_t* comm_2401::get_rxbuf() {
     return rxbuf;
 }
 
+void comm_2401::change_mode() {
+    if(mode == TX)  change_mode_to_RX();
+    else    change_mode_to_TX();
+}
+
+void comm_2401::change_mode_to_TX() {
+    // enable TX
+    mode = TX;
+    digitalWrite(8, HIGH);
+    digitalWrite(7, LOW);
+    // zos::log("change mode to TX\n");
+}
+
+void comm_2401::change_mode_to_RX() {
+    // enable RX
+    mode = RX;
+    digitalWrite(7, HIGH);
+    digitalWrite(8, LOW);
+    // zos::log("change mode to RX\n");
+}
+
+
 void comm_2401::send(const void* tx_buf) {
+    std::scoped_lock lock(mutex_comm_2401);
     // radio_RX.stopListening();
-    // radio_TX.stopListening();   // put radio_TX in TX mode
-    radio_TX.write(tx_buf, MAX_SIZE);
+    change_mode();
+    radio_RX.stopListening();   // put radio_TX in TX mode
+    radio_RX.write(tx_buf, MAX_SIZE);
+    zos::log("send data :{}\n", tx_buf);
+
+    change_mode();
+    radio_RX.startListening();
 }

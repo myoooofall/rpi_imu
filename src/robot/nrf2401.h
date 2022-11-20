@@ -29,13 +29,12 @@
 class comm_2401 {
 public:
     comm_2401() : radio_TX(config::radio_tx_ce_pin, config::radio_tx_csn),radio_RX(config::radio_rx_ce_pin, config::radio_rx_csn) {
-        wiringPiSetup();
-        pinMode(config::radio_tx_ce_pin, OUTPUT);
-        pinMode(config::radio_rx_ce_pin, OUTPUT);
         init_2401(&radio_TX);
         init_2401(&radio_RX);
         // put radio_TX in TX mode
         // Start 2401 for receiving
+        // radio_RX.powerUp();
+        // init_2401(&radio_RX);
         radio_TX.stopListening();
         radio_RX.startListening();
 
@@ -43,6 +42,7 @@ public:
     void start() {
         std::jthread th_comm(&comm_2401::comm_2401_test, this);
         th_comm.detach();
+        // th_comm.join();
     };
     void send(const void* tx_buf);
     bool get_receive_flag();
@@ -61,6 +61,10 @@ private:
     bool receive_flag = false;
     uint8_t rxbuf[MAX_SIZE] = {0x0};
 
+    enum modes{TX = 0, RX = 1}   mode=RX;
+    void change_mode();
+    void change_mode_to_TX();
+    void change_mode_to_RX();
     static void HexToAscii(unsigned char * pHex, char * pAscii, int nLen);
 };
 

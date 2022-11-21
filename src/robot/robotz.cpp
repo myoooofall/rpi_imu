@@ -1,20 +1,20 @@
 #include "robotz.h"
 
-robotz::robotz(int motor_num) : i2c_d(motor_num), control(controlal::Mode::RealTime), thpool(1) {
+robotz::robotz(int motor_num) : gpio_devices(motor_num), control(controlal::Mode::RealTime), thpool(1) {
     // Motor Init
     // TODO: change to while
-    int motors_num = i2c_d.motors_detect();
+    int motors_num = gpio_devices.motors_detect();
     if ( motors_num == 0 ) {
-        std::cout << "NO device detected" << std::endl;
+        zos::log("NO motor detected\n");
     }else {
-        std::cout << motors_num << " motor detected!" << std::endl;
+        zos::log("{} motor detected!\n", motors_num);
     }
     // bangbang.control_init();
     #ifdef OLD_VERSION
     comm.start();
     #endif
     
-    thpool.enqueue(&robotz::run, this);
+    thpool.enqueue(&robotz::run_per_13ms, this);
 }
 
 //解包，到每个轮子的速度
@@ -35,8 +35,7 @@ int robotz::unpack(uint8_t *Packet) {
             Robot_Chip_Or_Shoot = ( Packet[1] >> 6 ) & 0x01;
             Robot_Boot_Power = Packet[21] & 0x7f;
             use_dir = Packet[21] & 0x80;
-        }
-        else if((robot_num == (Packet[5] & 0x0f)) && (Packet[0] & 0x04)){
+        }else if ((robot_num == (Packet[5] & 0x0f)) && (Packet[0] & 0x04)) {
             valid_pack = 1;
             Vx_package = (Packet[6] & 0x7f) + ((Packet[18] & 0xc0) << 1);
             Vx_package = (Packet[6] & 0x80) ? ( -Vx_package ) : Vx_package;
@@ -49,8 +48,7 @@ int robotz::unpack(uint8_t *Packet) {
             Robot_Chip_Or_Shoot = ( Packet[5] >> 6 ) & 0x01;
             Robot_Boot_Power = Packet[22] & 0x7f;
             use_dir = Packet[22] & 0x80;
-        }
-        else if((robot_num == (Packet[9] & 0x0f)) && (Packet[0] & 0x02)){
+        }else if ((robot_num == (Packet[9] & 0x0f)) && (Packet[0] & 0x02)) {
             valid_pack = 1;
             Vx_package = (Packet[10] & 0x7f) + ((Packet[19] & 0xc0) << 1);
             Vx_package = (Packet[10] & 0x80) ? ( -Vx_package ) : Vx_package;
@@ -63,8 +61,7 @@ int robotz::unpack(uint8_t *Packet) {
             Robot_Chip_Or_Shoot = ( Packet[9] >> 6 ) & 0x01;
             Robot_Boot_Power = Packet[23] & 0x7f;
             use_dir = Packet[23] & 0x80;
-        }
-        else if((robot_num == (Packet[13] & 0x0f)) && (Packet[0] & 0x01)){
+        }else if ((robot_num == (Packet[13] & 0x0f)) && (Packet[0] & 0x01)) {
             valid_pack = 1;
             Vx_package = (Packet[14] & 0x7f) + ((Packet[20] & 0xc0) << 1);
             Vx_package = (Packet[14] & 0x80) ? ( -Vx_package ) : Vx_package;
@@ -139,7 +136,7 @@ void robotz::motion_planner() {
     vel_pack[2] = ((sin_angle[2]) * Vx_package + (cos_angle[2]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
     vel_pack[3] = ((sin_angle[3]) * Vx_package + (cos_angle[3]) * Vy_package - 8.2 * Vr_cal) * Vel_k2;
 
-    zos::info("vel_pack: {} {} {} {}\n", vel_pack[0], vel_pack[1], vel_pack[2], vel_pack[3]);    
+    // zos::info("vel_pack: {} {} {} {}\n", vel_pack[0], vel_pack[1], vel_pack[2], vel_pack[3]);    
 }
 
 void robotz::stand() {
@@ -176,10 +173,15 @@ void robotz::stand() {
 //     if(Left_Report_Package > 0)   Left_Report_Package --;
 // }
 
-bool robotz::regular_re() {
+bool robotz::get_new_pack() {
     if (unpack(rxbuf)) {
         // Correct package
         motion_planner();
+
+        if (Robot_Boot_Power) {
+            Robot_Is_Boot_charged = gpio_devices.shoot_test(Robot_Boot_Power);
+        }
+
         if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
             Left_Report_Package = 4;
             Last_Robot_Status = Robot_Status;
@@ -192,10 +194,11 @@ bool robotz::regular_re() {
             
         if(Left_Report_Package > 0 || Kick_Count > 0){
             pack(TX_Packet);
-            #ifndef OLD_VERSION
-            wifiz.udp_sender(TX_Packet);
-            #else
+            #ifdef OLD_VERSION
+            // zos::log("ready to send\n");
             comm.send(std::data(TX_Packet));
+            #else
+            wifiz.udp_sender(TX_Packet);
             #endif
             transmitted_packet++;
         }
@@ -264,15 +267,16 @@ void robotz::pack(std::vector<uint8_t> &TX_Packet){
     TX_Packet[11] = (temp3 & 0xFF);
     TX_Packet[12] = (temp4 & 0xFF00)>>8;
     TX_Packet[13] = (temp4 & 0xFF);
-    zos::log("tx package: {}\n", TX_Packet[0]);
+    // zos::log("tx package: {}\n", TX_Packet[0]);
 }
 
-void robotz::run() {
+void robotz::run_per_13ms() {
     zos::Rate robot_rate(config::robot_freq);
     while (true)
     {
-        i2c_d.motors_write(vel_pack);
-        // i2c_d.adc_test();
+        gpio_devices.motors_write(vel_pack);
+        gpio_devices.charge_switch();
+        // gpio_devices.adc_test();
 
         //infrare
         // infrare_detect();
@@ -286,7 +290,8 @@ void robotz::run() {
         // TODO: Shoot and chip-need to determine time flag
         // if(chipshoot_timerdelay_flag < 1000)
         //     chipshoot_timerdelay_flag++;
-        // Robot_Is_Boot_charged = i2c_d.shoot_chip(Robot_Is_Boot_charged, Robot_Boot_Power);
+        AD_Boot_Cap = gpio_devices.adc_cap_vol();
+
 
         robot_rate.sleep();
         // period_test();
@@ -301,5 +306,5 @@ void robotz::period_test() {
 }
 
 void robotz::testmode_on() {
-    i2c_d.output_test();
+    gpio_devices.output_test();
 }

@@ -18,7 +18,7 @@ int main() {
     {   
         // Detect receive pack
         if (Received_packet) {
-            zjunlict.regular_re();
+            zjunlict.get_new_pack();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));

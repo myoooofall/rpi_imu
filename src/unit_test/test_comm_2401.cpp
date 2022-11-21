@@ -22,8 +22,13 @@ int main() {
             std::copy(rxbuf_ptr, rxbuf_ptr+MAX_SIZE, rxbuf);
             test.set_receive_flag();
             zos::log("receive package: {} {} {} {} {}\n", rxbuf[0], rxbuf[1], rxbuf[2], rxbuf[3], rxbuf[4]);
+            count++;
         }
-        test.send(std::data(txbuf));
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (count > 50) {
+            test.send(std::data(txbuf));
+            count = 0;
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }

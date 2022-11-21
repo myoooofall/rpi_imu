@@ -1,6 +1,5 @@
 #define OLD_VERSION
 
-#include "nrf2401.h"
 #include "robotz.h"
 uint16_t Received_packet = 0;
 uint32_t Total_Missed_Package_Num = 0;
@@ -31,7 +30,7 @@ int main() {
             // zos::log("receive package: {} {} {} {} {}\n", rxbuf[0], rxbuf[1], rxbuf[2], rxbuf[3], rxbuf[4]);
             // zos::info("vx: {}   vy: {}\n", (rxbuf[2] & 0x7f) + ((rxbuf[17] & 0xc0) << 1), (rxbuf[3] & 0x7f) + ((rxbuf[17] & 0x30) << 3));
 
-            received_packet_flag = zjunlict.regular_re();
+            received_packet_flag = zjunlict.get_new_pack();
         }
 
         if (received_packet_flag == 0) {

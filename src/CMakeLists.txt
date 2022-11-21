@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_UNITY_BUILD ON)
 # chip option
+# option(WIRINGPI_V "wiringpi library" OFF)   # SHIT wiringpi !
 option(CM4_VERSION "compile for CM4" ON)
 option(ROCKS_VERSION "compile for ROCKS" OFF)
 if(ROCKS_VERSION)
@@ -77,7 +79,10 @@ file(GLOB SHARED_SOURCE_FILES
 if(CM4_VERSION)
     file(GLOB SHARED_SOURCE_FILES
         ${SHARED_SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_CM4.cpp
+        # if(WIRINGPI_V)
+        #     ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_CM4.cpp
+        # endif()
+        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_pigpio.cpp
     )
 elseif(ROCKS_VERSION)
     file(GLOB SHARED_SOURCE_FILES

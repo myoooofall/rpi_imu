@@ -21,5 +21,5 @@ Dependence:
 
 cmake option: **CM4_VERSION** default on
 ```bash
-cmake .. -D RF24_DRIVER=wiringPi
+cmake .. -D RF24_DRIVER=pigpio
 ```

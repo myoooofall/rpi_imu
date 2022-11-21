@@ -1,7 +1,12 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
+#ifdef OLD_VERSION
+#include "nrf2401.h"
+#else
 #include "wifiz.h"
+#endif
+
 #include "robot_comm.pb.h"
 #include "controlal.h"
 // #include "controlal.h"
@@ -9,19 +14,20 @@
 #ifdef ROCKPIS_VERSION
     #include "device_ROCKS.h"
 #elif defined(CM4_VERSION)
-    #include "device_CM4.h"
+    // #include "device_CM4.h"
+    #include "device_pigpio.h"
 #endif
 
 class robotz {
 public:
     robotz(int motor_num=4);
     uint8_t robot_num = config::robot_id;
-    #ifndef OLD_VERSION
+    devicez gpio_devices;
+    #ifdef OLD_VERSION
+    comm_2401 comm;
+    #else
     wifi_comm wifiz;
     #endif
-    devicez i2c_d;
-    int test_motor_num = 2;
-    uint8_t motor_addr[4] = {0x28,0x29,0x30,0x31};
 
     // controlal bangbang;
     void testmode_on();
@@ -66,19 +72,9 @@ public:
 
     // uint8_t RX_Packet[25];
 
-    void pack(std::vector<uint8_t> &TX_Packet);
-    int unpack(uint8_t *Packet);
-    bool unpack_proto(std::string proto_string);
-    void motion_planner();
-    void shoot_chip();
-
-    void run();
-    void regular();
-    bool regular_re();
+    void run_per_13ms();
+    bool get_new_pack();
     void stand();
-
-    int infrare_detect();
-    void infrare_toggin();
 
     void period_test();
 
@@ -104,6 +100,16 @@ private:
 
     static constexpr double sin_angle[4] = {sin(config::car_angle), -sin(config::car_angle), -sin(45), sin(45)};
     static constexpr double cos_angle[4] = {-cos(config::car_angle), -cos(config::car_angle), cos(45), cos(45)};
+    
+    void pack(std::vector<uint8_t> &TX_Packet);
+    int unpack(uint8_t *Packet);
+    bool unpack_proto(std::string proto_string);
+    void motion_planner();
+    void shoot_chip();
+    
+    int infrare_detect();
+    void infrare_toggin();
+
 };
 
 #endif

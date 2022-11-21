@@ -17,11 +17,9 @@ void comm_2401::init_2401(RF24* radio) {
     // std::this_thread::sleep_for(std::chrono::milliseconds(5));
     // perform hardware check
     if (!radio->begin()) {
-        std::cout << "radio hardware is not responding!!" << std::endl;
+        zos::error("radio hardware is not responding!!\n");
         return; // quit now
     }
-    std::cout << "Device checked!" << std::endl;
-
     radio->setAutoAck(false);           // EN_AA
     radio->setChannel(tx_frequency);    // RF_CH; Freq 6: 24; Freq 8: 90
     radio->setPayloadSize(MAX_SIZE);    // RX_PW_P0
@@ -200,7 +198,7 @@ void comm_2401::send(const void* tx_buf) {
     change_mode();
     radio_TX.stopListening();   // put radio_TX in TX mode
     radio_TX.write(tx_buf, MAX_SIZE);
-    zos::log("send data :{}\n", tx_buf);
+    // zos::log("send data :{}\n", tx_buf);
 
     change_mode_to_RX();
 }

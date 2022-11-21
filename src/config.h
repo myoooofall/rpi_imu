@@ -14,8 +14,9 @@ namespace config {
     
     constexpr uint8_t robot_id = 0x0f;
     constexpr uint8_t motors_addr[4] = {0x28,0x29,0x30,0x31};
+    constexpr int i2c_bus = 1;
     constexpr uint8_t adc_addr = 0x48;
-    constexpr float adc_cap_vol_k = 101*3.3/255;
+    constexpr float adc_cap_vol_k = 101*5/255;
     // nrf2401
     constexpr int radio_tx_ce_pin = 22;
     // constexpr int radio_tx_ce_pin = 3;

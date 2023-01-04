@@ -19,7 +19,11 @@ robotz::robotz(int motor_num) : gpio_devices(motor_num), control(controlal::Mode
 
 //解包，到每个轮子的速度
 int robotz::unpack(uint8_t *Packet) {
+    #ifdef OLD_VERSION
+    std::scoped_lock lock(comm.mutex_comm_2401);
+    #else
     std::scoped_lock lock(mutex_comm);
+    #endif
 
     if ((Packet[0] & 0xf0) == 0x40) {
         if ((robot_num == (Packet[1] & 0x0f)) && (Packet[0] & 0x08)) {
@@ -173,43 +177,6 @@ void robotz::stand() {
 //     if(Left_Report_Package > 0)   Left_Report_Package --;
 // }
 
-bool robotz::get_new_pack() {
-    if (unpack(rxbuf)) {
-        // Correct package
-        motion_planner();
-
-        if (Robot_Boot_Power) {
-            Robot_Is_Boot_charged = gpio_devices.shoot_test(Robot_Boot_Power);
-        }
-
-        if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
-            Left_Report_Package = 4;
-            Last_Robot_Status = Robot_Status;
-        }
-
-        if(Kick_Count > 0)
-            Kick_Count--;
-        else
-            Robot_Status &= 0xCF;
-            
-        if(Left_Report_Package > 0 || Kick_Count > 0){
-            pack(TX_Packet);
-            #ifdef OLD_VERSION
-            // zos::log("ready to send\n");
-            comm.send(std::data(TX_Packet));
-            #else
-            wifiz.udp_sender(TX_Packet);
-            #endif
-            transmitted_packet++;
-        }
-
-        if(Left_Report_Package > 0)   Left_Report_Package --;
-    }
-
-    Received_packet = 0;
-    return valid_pack;
-}
-
 void robotz::pack(std::vector<uint8_t> &TX_Packet){
     int temp_bat;
     int temp_boot;
@@ -296,6 +263,43 @@ void robotz::run_per_13ms() {
         robot_rate.sleep();
         // period_test();
     }
+}
+
+bool robotz::get_new_pack() {
+    if (unpack(rxbuf)) {
+        // Correct package
+        motion_planner();
+
+        if (Robot_Boot_Power) {
+            Robot_Is_Boot_charged = gpio_devices.shoot_test(Robot_Boot_Power);
+        }
+
+        if ((Robot_Status != Last_Robot_Status) || (Robot_Is_Infrared) || (Robot_Is_Report == 1)) {
+            Left_Report_Package = 4;
+            Last_Robot_Status = Robot_Status;
+        }
+
+        if(Kick_Count > 0)
+            Kick_Count--;
+        else
+            Robot_Status &= 0xCF;
+
+        if(Left_Report_Package > 0 || Kick_Count > 0){
+            pack(TX_Packet);
+            #ifdef OLD_VERSION
+            // zos::info("ready to send\n");
+            comm.send(std::data(TX_Packet));
+            #else
+            wifiz.udp_sender(TX_Packet);
+            #endif
+            transmitted_packet++;
+        }
+
+        if(Left_Report_Package > 0)   Left_Report_Package --;
+    }
+
+    Received_packet = 0;
+    return valid_pack;
 }
 
 void robotz::period_test() {

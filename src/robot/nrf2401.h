@@ -16,7 +16,6 @@
 #include "config.h"
 
 extern uint16_t Received_packet;
-extern uint8_t rxbuf[25];
 
 /****************** Linux ***********************/
 // Radio CE Pin, CSN Pin, SPI Speed
@@ -59,6 +58,7 @@ private:
     void config_2401(RF24* radio, uint8_t* txbuf);
     int comm_2401_test();
 
+    uint8_t rxbuf[25];
     bool receive_flag = false;
     // uint8_t rxbuf[MAX_SIZE] = {0x0};
 

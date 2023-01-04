@@ -85,39 +85,16 @@ int comm_2401::comm_2401_test() {
             radio_RX.read(rxbuf, MAX_SIZE);                     // fetch payload from FIFO
             receive_flag = true;
 
-            std::string str(rxbuf,rxbuf+MAX_SIZE);
+            // std::string str(rxbuf,rxbuf+MAX_SIZE);
 
             // socket_rx.send_to(str, receiver_endpoint_rx);
 
 
-            char pAscii[MAX_SIZE];
-            HexToAscii(rxbuf, pAscii, MAX_SIZE);
-            std::string ascii(pAscii);
+            // char pAscii[MAX_SIZE];
+            // HexToAscii(rxbuf, pAscii, MAX_SIZE);
+            // std::string ascii(pAscii);
             status_count = 0;
             // cout << str << endl;
-
-            // if (radio_RX.getChannel()==24) {
-            //     cout << "Freq: " << 6;
-            // } else {
-            //     cout << "Freq: " << 8;
-            // }
-            // cout << "; Receive Package: " << ascii << endl;
-            // int robot_num = rxbuf[2] & 0x0f;
-            // cout << "; Robot: " << robot_num << endl;
-            // int Wheel[4];
-            // Wheel[0] = rxbuf[6]*256 + rxbuf[7];
-            // Wheel[1] = rxbuf[8]*256 + rxbuf[9];
-            // Wheel[2] = rxbuf[10]*256 + rxbuf[11];
-            // Wheel[3] = rxbuf[12]*256 + rxbuf[13];
-            
-            // cout << "Robot: " << (rxbuf[2] & 0x0f) << "    ";
-            // for (int i=0; i<4; i++) {
-            //     cout << "Wheel" << i <<": " << Wheel[i] << "    ";
-            // }
-            // cout << endl;
-            
-            // cout << str.length() << endl;
-            // cout << "Send to: " << receiver_endpoint_rx.address().to_string() << "Receive Package: " << str << endl;
         }else if(status_count > 10) {
             std::scoped_lock lock(mutex_comm_2401);
             change_mode_to_RX();
@@ -195,10 +172,10 @@ void comm_2401::change_mode_to_RX() {
 void comm_2401::send(const void* tx_buf) {
     std::scoped_lock lock(mutex_comm_2401);
     // radio_RX.stopListening();
-    change_mode();
+    // change_mode();
     radio_TX.stopListening();   // put radio_TX in TX mode
     radio_TX.write(tx_buf, MAX_SIZE);
     // zos::log("send data :{}\n", tx_buf);
 
-    change_mode_to_RX();
+    // change_mode_to_RX();
 }

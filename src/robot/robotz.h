@@ -1,11 +1,12 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#ifdef OLD_VERSION
+
+// #ifdef OLD_VERSION
 #include "nrf2401.h"
-#else
-#include "wifiz.h"
-#endif
+// #else
+// #include "wifiz.h"
+// #endif
 
 #include "robot_comm.pb.h"
 #include "controlal.h"
@@ -18,16 +19,18 @@
     #include "device_pigpio.h"
 #endif
 
+#include <yaml-cpp/yaml.h>
+
 class robotz {
 public:
     robotz(int motor_num=4);
     uint8_t robot_num = config::robot_id;
     devicez gpio_devices;
-    #ifdef OLD_VERSION
-    comm_2401 comm;
-    #else
-    wifi_comm wifiz;
-    #endif
+    // #ifdef OLD_VERSION
+    comm_2401 nrf2401;
+    // #else
+    // wifi_comm wifiz;
+    // #endif
 
     // controlal bangbang;
     void testmode_on();
@@ -71,6 +74,7 @@ public:
     double Encoder_count_Motor4_avg = 0;
 
     // uint8_t RX_Packet[25];
+    void set_pid();
 
     void run_per_13ms();
     bool get_new_pack();
@@ -79,8 +83,12 @@ public:
     void period_test();
 
 private:
+    YAML::Node config_yaml;
+    bool pid_busy = false;  // TODO: ?
     robot_comm::Robot comm_pack; 
     std::vector<int> vel_pack = {0,0,0,0};
+    std::vector<int> pid_pack = {0,0,0,0,0,0,0,0};
+    std::vector<int> pid_real = {0,0,0,0,0,0,0,0};
     std::vector<uint8_t> TX_Packet = {
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,  //[0-8]
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,        //[9-16]
@@ -93,13 +101,14 @@ private:
 
     std::chrono::time_point<std::chrono::steady_clock> lasttime;
 
-    int infr_count = 0;
+    // int infr_count = 0;
     bool valid_pack = 0;
+    int chipshoot_timerdelay_flag = 0;
     
     const double Vel_k2 = config::vel_ratio;
 
-    static constexpr double sin_angle[4] = {sin(config::car_angle), -sin(config::car_angle), -sin(45), sin(45)};
-    static constexpr double cos_angle[4] = {-cos(config::car_angle), -cos(config::car_angle), cos(45), cos(45)};
+    static constexpr double sin_angle[4] = {sin(config::car_angle_front), -sin(config::car_angle_front), -sin(config::car_angle_back), sin(config::car_angle_back)};
+    static constexpr double cos_angle[4] = {-cos(config::car_angle_front), -cos(config::car_angle_front), cos(config::car_angle_back), cos(config::car_angle_back)};
     
     void pack(std::vector<uint8_t> &TX_Packet);
     int unpack(uint8_t *Packet);
@@ -109,6 +118,9 @@ private:
     
     int infrare_detect();
     void infrare_toggin();
+
+    void pid_read();
+    void pid_save();
 
 };
 

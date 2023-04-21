@@ -16,6 +16,7 @@
 #include "config.h"
 
 extern uint16_t Received_packet;
+extern uint8_t rxbuf[25];
 
 /****************** Linux ***********************/
 // Radio CE Pin, CSN Pin, SPI Speed
@@ -37,19 +38,19 @@ public:
         // init_2401(&radio_RX);
         radio_TX.stopListening();
         radio_RX.startListening();
-
+        start();
     };
-    void start() {
-        std::jthread th_comm(&comm_2401::comm_2401_test, this);
-        th_comm.detach();
-        // th_comm.join();
-    };
+    void start();
     void send(const void* tx_buf);
     bool get_receive_flag();
     void set_receive_flag();
     uint8_t* get_rxbuf();
 
     std::mutex mutex_comm_2401;
+    ~comm_2401() {
+        zos::log("stop 2401\n");
+        gpioTerminate();
+    }
 
 private:
     RF24 radio_TX;
@@ -58,7 +59,6 @@ private:
     void config_2401(RF24* radio, uint8_t* txbuf);
     int comm_2401_test();
 
-    uint8_t rxbuf[25];
     bool receive_flag = false;
     // uint8_t rxbuf[MAX_SIZE] = {0x0};
 

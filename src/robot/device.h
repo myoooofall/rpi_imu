@@ -23,7 +23,9 @@ public:
     virtual void motors_write_single(int motor_id, int vel) = 0;
     virtual uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) = 0;
     virtual void infrare_detect() = 0;
-    virtual void dribbler() = 0;
+    virtual void dribbler(int dribble_val) = 0;
+
+    virtual void buzzer_once(int freq) = 0;
     
     void output_test() {
         i2c_testmode = true;

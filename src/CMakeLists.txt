@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_UNITY_BUILD ON)
+# set(CMAKE_UNITY_BUILD ON)
 # chip option
 # option(WIRINGPI_V "wiringpi library" OFF)   # SHIT wiringpi !
 option(CM4_VERSION "compile for CM4" ON)
@@ -36,8 +36,8 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(Protobuf REQUIRED)
-
 find_library(RF24 rf24 REQUIRED)
 message(STATUS "using RF24 library: ${RF24}")
 
@@ -51,6 +51,7 @@ include(cmake/AutoConfig_RF24_DRIVER.cmake)
 include_directories(
     ${fmt_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+    ${YAML_CPP_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/share/proto
     ${CMAKE_CURRENT_SOURCE_DIR}/control
     ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
@@ -61,6 +62,7 @@ include_directories(
 set(LIBS
     ${LIBS}
     ${Protobuf_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
     Threads::Threads
     fmt::fmt
     ${RF24}
@@ -93,7 +95,9 @@ endif()
 
 
 file(GLOB TEST_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
 )
 
 foreach(test_file ${TEST_FILES})

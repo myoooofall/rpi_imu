@@ -10,6 +10,12 @@ uint8_t bandwidth = 25;  //24L01带宽
 static bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: PC
 
+void comm_2401::start() {
+    std::jthread th_comm(&comm_2401::comm_2401_test, this);
+    th_comm.detach();
+    // th_comm.join();
+};
+
 void comm_2401::init_2401(RF24* radio) {
     // radio->powerDown();
     // std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -65,6 +71,7 @@ void comm_2401::config_2401(RF24* radio, uint8_t* txbuf) {
 
 int comm_2401::comm_2401_test() {
 
+    std::stop_token stoken;
     int status_count = 0;
     
     while (true)
@@ -103,7 +110,7 @@ int comm_2401::comm_2401_test() {
             std::this_thread::sleep_for(std::chrono::microseconds(500));
         }
     }
-    
+    zos::error("2401 die!\n");
     return 0;
 }
 

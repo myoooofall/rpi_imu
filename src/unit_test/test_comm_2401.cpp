@@ -12,7 +12,6 @@ std::mutex mutex_comm;
 
 int main() {
     comm_2401 test;
-    test.start();
     int count = 0;
     txbuf[0] = 0xff;
     txbuf[1] = 0x02;
@@ -31,4 +30,5 @@ int main() {
         
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
+    return 0;
 }

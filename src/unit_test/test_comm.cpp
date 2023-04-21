@@ -26,10 +26,14 @@ int main() {
         received_packet_flag = 0;
         if (Received_packet) {  // Callback of udp receive
             received_packet_flag = zjunlict.get_new_pack();
-        }
-        if (received_packet_flag == 0) {
-            if (Total_Missed_Package_Num++ >= 500) {    // Missing package for 1 seconds
-                zjunlict.stand();   // Set to 0
+            if (received_packet_flag == 0) {
+                if (Total_Missed_Package_Num++ >= 500) {    // Missing package for 1 seconds
+                    zjunlict.stand();   // Set to 0
+                    Total_Missed_Package_Num = 0;
+                    zos::warning("package missed\n");
+                }
+            }else {
+                zos::log("new pack\n");
             }
         }
         

@@ -13,8 +13,9 @@
 
 namespace config {
     
-    constexpr uint8_t robot_id = 0x0f;
+    constexpr uint8_t robot_id = 0x06;
     constexpr uint8_t motors_addr[4] = {0x20,0x22,0x24,0x26};
+    constexpr uint8_t dribbler_addr = 0x28;
     // constexpr uint8_t motors_addr[4] = {0x28,0x29,0x30,0x31};
     constexpr int i2c_bus = 1;
     constexpr uint8_t adc_addr = 0x48;
@@ -26,7 +27,7 @@ namespace config {
     constexpr int radio_rx_csn = 1;
 
     // wifi
-    constexpr int receive_port = 30001;
+    constexpr int receive_port = 1030;
     constexpr int send_single_port = 30002;
     constexpr int send_multicast_port = 30003;
     constexpr char multicast_addr[] = "233.233.233.233";

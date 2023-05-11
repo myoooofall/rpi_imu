@@ -21,11 +21,11 @@ robotz::robotz(int motor_num) : gpio_devices(motor_num), control(controlal::Mode
 
 //解包，到每个轮子的速度
 int robotz::unpack(uint8_t *Packet) {
-    // #ifdef OLD_VERSION
+    #ifdef OLD_VERSION
     std::scoped_lock lock(nrf2401.mutex_comm_2401);
-    // #else
-    // std::scoped_lock lock(mutex_comm);
-    // #endif
+    #else
+    std::scoped_lock lock(mutex_comm);
+    #endif
     // if ((Packet[0] & 0xf0) == 0x40)
 
     if ((Packet[0] & 0xf0) == 0x40) {
@@ -111,7 +111,7 @@ int robotz::unpack(uint8_t *Packet) {
         set_pid();
     }else {
         valid_pack = 0;
-        zos::error("wrong pack\n");
+        zos::error("wrong pack: {} {} {}\n", Packet[0], Packet[1], Packet[2]);
     }
     
     return valid_pack;
@@ -183,9 +183,9 @@ void robotz::stand() {
     Robot_drib = 0;
                     
     std::fill_n(begin(vel_pack), MAX_MOTOR, 0);
-    // #ifndef OLD_VERSION
-    // wifiz.udp_restart();
-    // #endif
+    #ifndef OLD_VERSION
+    wifiz.udp_restart();
+    #endif
 }
 
 // void robotz::regular() {
@@ -342,12 +342,12 @@ bool robotz::get_new_pack() {
         if(Left_Report_Package > 0 || Kick_Count > 0) {
             pack(TX_Packet);
             zos::log("pack infrare: {:x}\n", (TX_Packet[3]));
-            // #ifdef OLD_VERSION
+            #ifdef OLD_VERSION
             // zos::info("ready to send\n");
             nrf2401.send(std::data(TX_Packet));
-            // #else
-            // wifiz.udp_sender(TX_Packet);
-            // #endif
+            #else
+            wifiz.udp_sender(TX_Packet);
+            #endif
             transmitted_packet++;
         }
 
@@ -414,4 +414,42 @@ void robotz::pid_save() {
     fout.close();
     zos::log("pid update\n");
     // pid_read();
+}
+
+void robotz::self_test() {
+    move(20, 0, 0);
+    move(0, 20, 0);
+    move(0, 0, 60);
+    
+    dribble(1);
+    dribble(3);
+
+    shoot_chip(0, 40);
+    shoot_chip(1, 40);
+}
+
+void robotz::move(int Vx, int Vy, int Vr) {
+    Vx_package = Vx;
+    Vy_package = Vy;
+    Vr_package = Vr;
+    motion_planner();
+    zos::log("move x:{} y:{} z:{}\n", Vx, Vy, Vr);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    Vx_package = 0;
+    Vy_package = 0;
+    Vr_package = 0;
+    motion_planner();
+}
+void robotz::dribble(int d_power) {
+    Robot_drib = d_power;
+    zos::log("dribble {}\n", d_power);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    Robot_drib = 0;
+}
+void robotz::shoot_chip(int shoot_or_chip, int boot_power) {
+    Robot_Chip_Or_Shoot = shoot_or_chip;
+    Robot_Boot_Power = boot_power;
+    zos::log("shoot/chip:{}  power:{}\n", shoot_or_chip, boot_power);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    Robot_Boot_Power = 0;
 }

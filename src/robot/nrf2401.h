@@ -15,8 +15,9 @@
 #include <RF24/RF24.h> // RF24, RF24_PA_LOW, delay()
 #include "config.h"
 
-extern uint16_t Received_packet;
-extern uint8_t rxbuf[25];
+// extern uint16_t Received_packet;
+// extern uint8_t rxbuf[25];
+// extern std::mutex mutex_comm;
 
 /****************** Linux ***********************/
 // Radio CE Pin, CSN Pin, SPI Speed
@@ -25,7 +26,6 @@ extern uint8_t rxbuf[25];
 // ie: RF24 radio(<ce_pin>, <a>*10+<b>); spidev1.0 is 10, spidev1.1 is 11 etc..
 // RF24 radio_TX(22, 1);
 // RF24 radio_RX(27, 0);
-extern std::mutex mutex_comm;
 
 class comm_2401 {
 public:
@@ -60,7 +60,7 @@ private:
     int comm_2401_test();
 
     bool receive_flag = false;
-    // uint8_t rxbuf[MAX_SIZE] = {0x0};
+    uint8_t rxbuf[MAX_SIZE] = {0x0};
 
     enum modes{TX = 0, RX = 1}   mode=RX;
     void change_mode();

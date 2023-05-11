@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 if(CM4_VERSION)
-    set(LIBS wiringPi)
+    set(LIBS ${LibPIGPIO})
 elseif(ROCKS_VERSION)
     include_directories(
         $ENV{HOME}/aarch64-toolchains
@@ -42,11 +42,11 @@ find_library(RF24 rf24 REQUIRED)
 message(STATUS "using RF24 library: ${RF24}")
 
 # detect the CPU make and type
-include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
+# include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
 
 # auto-detect what driver to use
 # auto-detect can be overriden using `cmake .. -D RF24_DRIVER=<supported driver>`
-include(cmake/AutoConfig_RF24_DRIVER.cmake)
+# include(cmake/AutoConfig_RF24_DRIVER.cmake)
 
 include_directories(
     ${fmt_INCLUDE_DIRS}
@@ -66,7 +66,6 @@ set(LIBS
     Threads::Threads
     fmt::fmt
     ${RF24}
-    ${LibPIGPIO}
 )
 file(GLOB SHARED_SOURCE_FILES
     ${SHARED_SOURCE_FILES}
@@ -95,6 +94,7 @@ endif()
 
 
 file(GLOB TEST_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp

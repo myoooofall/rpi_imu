@@ -15,6 +15,7 @@ int main() {
     // test.start();
 
     robotz zjunlict;
+    zjunlict.self_test();
     // zjunlict.testmode_on();
 
     int count = 0;

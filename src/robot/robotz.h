@@ -5,7 +5,7 @@
 // #ifdef OLD_VERSION
 #include "nrf2401.h"
 // #else
-// #include "wifiz.h"
+#include "wifiz.h"
 // #endif
 
 #include "robot_comm.pb.h"
@@ -29,7 +29,7 @@ public:
     // #ifdef OLD_VERSION
     comm_2401 nrf2401;
     // #else
-    // wifi_comm wifiz;
+    wifi_comm wifiz;
     // #endif
 
     // controlal bangbang;
@@ -81,6 +81,12 @@ public:
     void stand();
 
     void period_test();
+
+    // self test 
+    void self_test();
+    void move(int Vx, int Vy, int Vr);
+    void dribble(int d_power);
+    void shoot_chip(int shoot_or_chip, int boot_power);
 
 private:
     YAML::Node config_yaml;

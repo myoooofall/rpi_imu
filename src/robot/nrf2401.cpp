@@ -8,9 +8,10 @@ uint8_t rx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
 uint8_t bandwidth = 25;  //24L01带宽
 
 static bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
-static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: PC
+static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: TR
 
 void comm_2401::start() {
+    zos::log("nrf2401 start!\n");
     std::jthread th_comm(&comm_2401::comm_2401_test, this);
     th_comm.detach();
     // th_comm.join();

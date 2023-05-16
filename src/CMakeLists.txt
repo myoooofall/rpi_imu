@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
+# set(CMAKE_UNITY_BUILD ON)
 # chip option
+# option(WIRINGPI_V "wiringpi library" OFF)   # SHIT wiringpi !
 option(CM4_VERSION "compile for CM4" ON)
 option(ROCKS_VERSION "compile for ROCKS" OFF)
 if(ROCKS_VERSION)
@@ -19,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 if(CM4_VERSION)
-    set(LIBS wiringPi)
+    set(LIBS ${LibPIGPIO})
 elseif(ROCKS_VERSION)
     include_directories(
         $ENV{HOME}/aarch64-toolchains
@@ -32,61 +34,70 @@ elseif(ROCKS_VERSION)
     )
 endif()
 
-find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
+find_package(fmt REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(Protobuf REQUIRED)
-
 find_library(RF24 rf24 REQUIRED)
 message(STATUS "using RF24 library: ${RF24}")
 
 # detect the CPU make and type
-include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
+# include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
 
 # auto-detect what driver to use
 # auto-detect can be overriden using `cmake .. -D RF24_DRIVER=<supported driver>`
-include(cmake/AutoConfig_RF24_DRIVER.cmake)
+# include(cmake/AutoConfig_RF24_DRIVER.cmake)
 
 include_directories(
     ${fmt_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share
+    ${YAML_CPP_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/share/proto
+    ${CMAKE_CURRENT_SOURCE_DIR}/control
     ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
-    
 set(LIBS
     ${LIBS}
     ${Protobuf_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
     Threads::Threads
     fmt::fmt
     ${RF24}
-    ${LibPIGPIO}
 )
-
 file(GLOB SHARED_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/control/*.cpp
+    ${SHARED_SOURCE_FILES}
     ${CMAKE_CURRENT_SOURCE_DIR}/share/proto/robot_comm.pb.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/wifiz.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/robotz.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nrf2401.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/control/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/robotz.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/wifiz.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/robot/nrf2401.cpp
 )
 # chip option
 if(CM4_VERSION)
     file(GLOB SHARED_SOURCE_FILES
         ${SHARED_SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/device_CM4.cpp
+        # if(WIRINGPI_V)
+        #     ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_CM4.cpp
+        # endif()
+        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_pigpio.cpp
     )
 elseif(ROCKS_VERSION)
     file(GLOB SHARED_SOURCE_FILES
         ${SHARED_SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/device_ROCKS.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/robot/device_ROCKS.cpp
     )
 endif()
 
 
 file(GLOB TEST_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
 )
 
 foreach(test_file ${TEST_FILES})

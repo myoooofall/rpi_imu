@@ -8,6 +8,11 @@
 
 - [fmt](https://fmt.dev/8.1.0/)
 
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+
 ## compile
 
 cmake option: **CM4_VERSION** default on
+```bash
+cmake .. -D RF24_DRIVER=pigpio
+```

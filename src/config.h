@@ -21,10 +21,10 @@ namespace config {
     constexpr uint8_t adc_addr = 0x48;
     constexpr float adc_cap_vol_k = 2.23; // 5/255*1008.87/8.87
     // nrf2401
-    constexpr int radio_tx_ce_pin = 27;
-    constexpr int radio_tx_csn = 12; // <a>*10+<b>; spidev1.0 is 10, spidev1.1 is 11 etc..
-    constexpr int radio_rx_ce_pin = 22;
-    constexpr int radio_rx_csn = 1;
+    constexpr int radio_tx_ce_pin = 22;
+    constexpr int radio_tx_csn = 1; // <a>*10+<b>; spidev1.0 is 10, spidev1.1 is 11 etc..
+    constexpr int radio_rx_ce_pin = 27;
+    constexpr int radio_rx_csn = 0;
 
     // wifi
     constexpr int receive_port = 1030;

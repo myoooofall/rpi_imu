@@ -3,6 +3,8 @@
 
 #include "device.h"
 #include <pigpio.h>
+#include "mraa/common.hpp"
+#include "mraa/uart.hpp"
 // using BCM number
 #define GPIO_SHOOT          23
 #define GPIO_CHIP           24
@@ -28,6 +30,9 @@ public:
     float adc_cap_vol();
     float adc_bat_vol();
 
+    void write_uart(uint8_t* buff);
+    void read_uart(uint8_t* buff);
+
     void adc_switch(int control_byte);
     std::vector<int> get_encoder();
     std::vector<int> get_pid();
@@ -43,10 +48,13 @@ public:
 
 private:
     std::mutex mutex_i2c;
+    std::mutex mutex_uart;
     std::vector<std::jthread> i2c_th_single;
     int motors_i2c_handle[MAX_MOTOR];
     int dribbler_i2c_handle;
     int adc_i2c_handle;
+
+    mraa::Uart* uart;
 
     uint8_t motors_i2c_addr[4];
 };

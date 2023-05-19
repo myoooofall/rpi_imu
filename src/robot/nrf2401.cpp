@@ -3,8 +3,8 @@
 using namespace std;
 
 // #include "2401.h"
-uint8_t tx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
-uint8_t rx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
+uint8_t tx_frequency = 94;	//24L01频率; Freq 6: 24; Freq 8: 90
+uint8_t rx_frequency = 94;	//24L01频率; Freq 6: 24; Freq 8: 90
 uint8_t bandwidth = 25;  //24L01带宽
 
 static bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
@@ -179,10 +179,18 @@ void comm_2401::change_mode_to_RX() {
 
 void comm_2401::send(const void* tx_buf) {
     std::scoped_lock lock(mutex_comm_2401);
-    // radio_RX.stopListening();
+    radio_RX.stopListening();
+
+    if (radio_RX.write(tx_buf, MAX_SIZE)) {
+        zos::status("pack transmission success\n");
+    }else {
+        zos::warning("pack transmission failed\n");
+    }
+    radio_RX.startListening();
+
     // change_mode();
-    radio_TX.stopListening();   // put radio_TX in TX mode
-    radio_TX.write(tx_buf, MAX_SIZE);
+    // radio_TX.stopListening();   // put radio_TX in TX mode
+    // radio_TX.write(tx_buf, MAX_SIZE);
     // zos::log("send data :{}\n", tx_buf);
 
     // change_mode_to_RX();

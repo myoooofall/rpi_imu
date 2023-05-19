@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 if(CM4_VERSION)
-    set(LIBS ${LibPIGPIO})
+    set(LIBS pigpio)
 elseif(ROCKS_VERSION)
     include_directories(
         $ENV{HOME}/aarch64-toolchains
@@ -49,6 +49,7 @@ message(STATUS "using RF24 library: ${RF24}")
 # include(cmake/AutoConfig_RF24_DRIVER.cmake)
 
 include_directories(
+    # ${pigpio_INCLUDE_DIRS}
     ${fmt_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
     ${YAML_CPP_INCLUDE_DIRS}
@@ -59,8 +60,12 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/robot
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+set(LibMRAA /usr/local/lib/aarch64-linux-gnu/libmraa.so)
+
 set(LIBS
     ${LIBS}
+    ${LibMRAA}
     ${Protobuf_LIBRARIES}
     ${YAML_CPP_LIBRARIES}
     Threads::Threads

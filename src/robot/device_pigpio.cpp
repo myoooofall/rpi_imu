@@ -22,6 +22,20 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     // buzzer
     gpioSetMode(GPIO_BUZZER, PI_OUTPUT);
     buzzer_start();
+
+    try {
+        uart = new mraa::Uart("/dev/ttyAMA1");
+    } catch (std::exception& e) {
+        std::cerr << "Error while setting up raw UART, do you have a uart?" << std::endl;
+        std::terminate();
+    }
+    if (uart->setBaudRate(9600) != mraa::SUCCESS) {
+        std::cerr << "Error setting parity on UART" << std::endl;
+    }
+    for (int i=0; i<10; i++) {
+        read_uart(NULL);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 }
 
 void devicez::buzzer_start() {
@@ -268,3 +282,19 @@ void devicez::motors_write_pid(std::vector<int>& pid_pack) {
 // }
 
 void devicez::infrare_detect() {}
+
+#define MAX_SIZE 25
+void devicez::write_uart(uint8_t* buff) {
+    std::string buff_str(buff, buff+MAX_SIZE);
+    std::scoped_lock lock(mutex_uart);
+    uart->writeStr(buff_str);
+    std::cout << "receive pack: " << buff_str << std::endl;
+}
+void devicez::read_uart(uint8_t* buff) {
+    std::scoped_lock lock(mutex_uart);
+    std::string buff_str = uart->readStr(MAX_SIZE);
+    std::cout << "read pack: " << buff_str << std::endl;
+    if (buff != NULL) {
+        std::copy(buff_str.begin(), buff_str.begin()+MAX_SIZE, buff);
+    }
+}

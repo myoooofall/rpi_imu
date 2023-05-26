@@ -11,6 +11,8 @@
 #define GPIO_CHARGE         17
 #define GPIO_BUZZER         12
 
+#define UART_BUFF_SIZE 3
+
 class devicez : public device{
 public:
     devicez(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
@@ -32,6 +34,7 @@ public:
 
     void write_uart(uint8_t* buff);
     void read_uart(uint8_t* buff);
+    std::vector<int> read_nano_uart();
 
     void adc_switch(int control_byte);
     std::vector<int> get_encoder();

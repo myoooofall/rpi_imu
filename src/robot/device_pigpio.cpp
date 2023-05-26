@@ -32,10 +32,6 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     if (uart->setBaudRate(9600) != mraa::SUCCESS) {
         std::cerr << "Error setting parity on UART" << std::endl;
     }
-    for (int i=0; i<10; i++) {
-        read_uart(NULL);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
 }
 
 void devicez::buzzer_start() {
@@ -148,16 +144,16 @@ uint8_t devicez::shoot_chip(uint8_t Robot_Chip_Or_Shoot, uint8_t Robot_Boot_Powe
             kick_gpio = GPIO_CHIP;
         }
 
-        if(Robot_Boot_Power > 0 && adc_cap_vol() > 100) {
+        if(Robot_Boot_Power > 0 && read_nano_uart()[1] > 100) {
             std::chrono::duration<int, std::nano> _step = std::chrono::microseconds(80);
         
             gpioWrite(kick_gpio, PI_HIGH);
             // zos::log("shoot: {}     ", _step*Robot_Boot_Power);
             std::this_thread::sleep_for(_step*Robot_Boot_Power);
             gpioWrite(kick_gpio, PI_LOW);
-            zos::status("vol remain: {}\n", adc_cap_vol());
+            zos::status("vol remain: {}\n", read_nano_uart()[1]);
         }else {
-            zos::log("low voltage: {}, boot power: {}\n", adc_cap_vol(), Robot_Boot_Power);
+            zos::log("low voltage: {}, boot power: {}\n", read_nano_uart()[1], Robot_Boot_Power);
         }
         gpioWrite(kick_gpio, PI_LOW);
     });
@@ -283,18 +279,37 @@ void devicez::motors_write_pid(std::vector<int>& pid_pack) {
 
 void devicez::infrare_detect() {}
 
-#define MAX_SIZE 25
 void devicez::write_uart(uint8_t* buff) {
-    std::string buff_str(buff, buff+MAX_SIZE);
+    std::string buff_str(buff, buff+UART_BUFF_SIZE);
     std::scoped_lock lock(mutex_uart);
     uart->writeStr(buff_str);
-    std::cout << "receive pack: " << buff_str << std::endl;
+    // std::cout << "receive pack: " << buff_str << std::endl;
 }
+
 void devicez::read_uart(uint8_t* buff) {
     std::scoped_lock lock(mutex_uart);
-    std::string buff_str = uart->readStr(MAX_SIZE);
-    std::cout << "read pack: " << buff_str << std::endl;
+    std::string buff_str = uart->readStr(UART_BUFF_SIZE);
+    // std::cout << "read pack: " << buff_str << std::endl;
     if (buff != NULL) {
-        std::copy(buff_str.begin(), buff_str.begin()+MAX_SIZE, buff);
+        std::copy(buff_str.begin(), buff_str.begin()+UART_BUFF_SIZE, buff);
     }
+}
+
+std::vector<int> devicez::read_nano_uart() {
+    uint8_t nano_buff[3] = {0};
+    std::vector<int> nano_pack(3, 0);
+    int infrare_flag;
+    int cap_vol;
+    int bat_vol_10x;
+    read_uart(nano_buff);
+    if((nano_buff[0] & 0xfa) == 0xfa) {
+        infrare_flag = nano_buff[0] & 0x01;
+        cap_vol = nano_buff[1];
+        bat_vol_10x = nano_buff[2];
+
+        nano_pack[0] = infrare_flag;
+        nano_pack[1] = cap_vol;
+        nano_pack[2] = bat_vol_10x;
+    }
+    return nano_pack;
 }

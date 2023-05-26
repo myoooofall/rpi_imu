@@ -291,7 +291,10 @@ void robotz::run_per_13ms() {
         // gpio_devices.charge_switch();
 
         //infrare
-        if (gpio_devices.adc_infrare()) {
+        std::vector<int> nano_pack = gpio_devices.read_nano_uart();
+        zos::status("infrare: {},   cap_vol: {:3}V,   bat_vol: {:.1f}V\n", nano_pack[0], nano_pack[1], nano_pack[2]/10.0);
+
+        if (nano_pack[0]) {
             // zos::status("infrare triggered\n"); 
             Robot_Is_Infrared = 1;
             Robot_Status = Robot_Status | (1 << 6);
@@ -310,8 +313,8 @@ void robotz::run_per_13ms() {
         // TODO: Shoot and chip-need to determine time flag
         // if(chipshoot_timerdelay_flag < 1000)
         //     chipshoot_timerdelay_flag++;
-        AD_Boot_Cap = gpio_devices.adc_cap_vol();
-        AD_Battery_Last = gpio_devices.adc_bat_vol();
+        AD_Boot_Cap = nano_pack[1];
+        AD_Battery_Last = nano_pack[2]/10.0;
 
         robot_rate.sleep();
         // period_test();
@@ -424,8 +427,8 @@ void robotz::self_test() {
     dribble(1);
     dribble(3);
 
-    shoot_chip(0, 40);
-    shoot_chip(1, 40);
+    // kick(0, 40);
+    // kick(1, 40);
 }
 
 void robotz::move(int Vx, int Vy, int Vr) {
@@ -446,7 +449,7 @@ void robotz::dribble(int d_power) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     Robot_drib = 0;
 }
-void robotz::shoot_chip(int shoot_or_chip, int boot_power) {
+void robotz::kick(int shoot_or_chip, int boot_power) {
     Robot_Chip_Or_Shoot = shoot_or_chip;
     Robot_Boot_Power = boot_power;
     zos::log("shoot/chip:{}  power:{}\n", shoot_or_chip, boot_power);

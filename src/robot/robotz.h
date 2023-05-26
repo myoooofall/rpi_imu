@@ -86,7 +86,7 @@ public:
     void self_test();
     void move(int Vx, int Vy, int Vr);
     void dribble(int d_power);
-    void shoot_chip(int shoot_or_chip, int boot_power);
+    void kick(int shoot_or_chip, int boot_power);
 
 private:
     YAML::Node config_yaml;

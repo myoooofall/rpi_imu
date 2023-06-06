@@ -6,28 +6,72 @@
 #include <fmt/core.h>
 #include "config.h"
 
-extern uint16_t Received_packet;
+extern std::atomic_bool Received_packet;
 extern uint8_t rxbuf[25];
 extern std::string rxbuf_proto;
 extern std::mutex mutex_comm;
 
+class ContextManager{
+    std::atomic<bool> _running = false;
+    void run(){
+        _running = true;
+        _context->run();
+        _context->reset();
+        _running = false;
+        // zos::status("_asio_context exit\n");
+    }
+    std::mutex _mutex;
+    std::thread _thread;
+    asio::io_context* _context;
+public:
+    ContextManager(asio::io_context* const context):_context(context){}
+    ~ContextManager(){
+        stop();
+        if(_thread.joinable()){
+            _thread.join();
+        }
+    }
+    void start(){
+        if(_running){
+            return;
+        }
+        std::scoped_lock<std::mutex> lock(_mutex);
+        if(!_running){
+            if(_thread.joinable()){
+                _thread.join();
+            }
+            _thread = std::thread(&ContextManager::run,this);
+        }
+    }
+    void stop(){
+        std::scoped_lock<std::mutex> lock(_mutex);
+        if(_running){
+            _context->stop();
+        }
+    }
+};
+
 class wifi_comm {
 public:
     // std::thread receiveThread;
-    wifi_comm();
+    wifi_comm(const zos::udp::__callback_ep_type& f={});
+    ~wifi_comm();
     void udp_stop();
     void udp_restart();
     void udp_receiver();
-    void udp_sender(std::vector<uint8_t> &txbuf);
-    void udp_sender_mc();
+    void udp_sender(const void* p,const size_t size);
+    void udp_sender_mc(const void* p,const size_t size);
 
 private:
+    ContextManager _context_manager;
+    void _cb(const void*, size_t);
     asio::ip::udp::endpoint receiver_endpoint;
     asio::ip::udp::endpoint multicast_endpoint;
+    asio::ip::udp::endpoint send2master_endpoint;
 
-    zos::udp::socket socket_send_single;
+    zos::udp::socket socket_send2master;
     zos::udp::socket socket_send_multicast;
+    zos::udp::socket socket_receiver;
 };
-
 
 #endif

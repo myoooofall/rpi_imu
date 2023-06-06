@@ -1,6 +1,6 @@
 #include "robotz.h"
 
-robotz::robotz(int motor_num) : gpio_devices(motor_num), control(controlal::Mode::RealTime), thpool(1) {
+robotz::robotz(int motor_num) : gpio_devices(motor_num), wifiz(std::bind(&robotz::_wifi_cb,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3)), control(controlal::Mode::RealTime){
     // Motor Init
     // TODO: change to while
     int motors_num = gpio_devices.motors_detect();
@@ -16,7 +16,9 @@ robotz::robotz(int motor_num) : gpio_devices(motor_num), control(controlal::Mode
     // comm.start();
     // #endif
     
-    thpool.enqueue(&robotz::run_per_13ms, this);
+    // thpool.enqueue(&robotz::run_per_13ms, this);
+    _jthread4control = std::jthread(std::bind(&robotz::run_per_13ms,this,std::placeholders::_1));
+    _jthread4multicast = std::jthread([&]{wifiz.udp_sender_mc(nullptr,0);});
 }
 
 //解包，到每个轮子的速度
@@ -117,15 +119,19 @@ int robotz::unpack(uint8_t *Packet) {
     return valid_pack;
 }
 
-bool robotz::unpack_proto(std::string proto_string) {
-    bool valid = false;
-    valid = comm_pack.ParseFromString(proto_string);
-    // zos::info("parsing protobuf\n");
-    if (valid) {
-        zos::info("Proto test Vx_package: {}\n", comm_pack.vx_package());
-        zos::info("Proto test Vy_package: {}\n", comm_pack.vy_package());
-    }
-    return valid;
+// bool robotz::unpack_proto(const void* ptr, size_t size) {
+//     bool valid = false;
+//     // valid = comm_pack.ParseFromString(proto_string);
+//     // // zos::info("parsing protobuf\n");
+//     // if (valid) {
+//     //     zos::info("Proto test Vx_package: {}\n", comm_pack.vx_package());
+//     //     zos::info("Proto test Vy_package: {}\n", comm_pack.vy_package());
+//     // }
+//     return valid;
+// }
+void robotz::_wifi_cb(const asio::ip::udp::endpoint& ep,const void* ptr,size_t size){
+    zos::log("got data in _wifi_cb from {}:{},size:{}\n",ep.address().to_string(),ep.port(),size);
+    wifiz.udp_sender(nullptr,0);
 }
 
 void robotz::motion_planner() {
@@ -281,11 +287,16 @@ void robotz::pack(std::vector<uint8_t> &TX_Packet) {
     // zos::log("tx package: {}\n", TX_Packet[0]);
 }
 
-void robotz::run_per_13ms() {
+void robotz::run_per_13ms(std::stop_token _stop_token) {
     zos::Rate robot_rate(config::robot_freq);
     while (true)
-    {
-        if(pid_busy)    continue;
+    {   
+        if(pid_busy){
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+
+        if(_stop_token.stop_requested()) break;
 
         gpio_devices.motors_write(vel_pack);
         // gpio_devices.charge_switch();
@@ -316,6 +327,7 @@ void robotz::run_per_13ms() {
         AD_Boot_Cap = nano_pack[1];
         AD_Battery_Last = nano_pack[2]/10.0;
 
+        wifiz.udp_sender_mc(nullptr,0);
         robot_rate.sleep();
         // period_test();
     }
@@ -349,7 +361,7 @@ bool robotz::get_new_pack() {
             // zos::info("ready to send\n");
             nrf2401.send(std::data(TX_Packet));
             #else
-            wifiz.udp_sender(TX_Packet);
+            wifiz.udp_sender(TX_Packet.data(),TX_Packet.size());
             #endif
             transmitted_packet++;
         }
@@ -357,7 +369,7 @@ bool robotz::get_new_pack() {
         if(Left_Report_Package > 0)   Left_Report_Package --;
     }
 
-    Received_packet = 0;
+    Received_packet = false;
     return valid_pack;
 }
 
@@ -420,18 +432,18 @@ void robotz::pid_save() {
 }
 
 void robotz::self_test() {
-    move(20, 0, 0);
-    move(0, 20, 0);
-    move(0, 0, 60);
+    test_move(20, 0, 0);
+    test_move(0, 20, 0);
+    test_move(0, 0, 60);
     
-    dribble(1);
-    dribble(3);
+    test_dribble(1);
+    test_dribble(3);
 
-    // kick(0, 40);
-    // kick(1, 40);
+    // test_kick(0, 40);
+    // test_kick(1, 40);
 }
 
-void robotz::move(int Vx, int Vy, int Vr) {
+void robotz::test_move(int Vx, int Vy, int Vr) {
     Vx_package = Vx;
     Vy_package = Vy;
     Vr_package = Vr;
@@ -443,13 +455,13 @@ void robotz::move(int Vx, int Vy, int Vr) {
     Vr_package = 0;
     motion_planner();
 }
-void robotz::dribble(int d_power) {
+void robotz::test_dribble(int d_power) {
     Robot_drib = d_power;
     zos::log("dribble {}\n", d_power);
     std::this_thread::sleep_for(std::chrono::seconds(1));
     Robot_drib = 0;
 }
-void robotz::kick(int shoot_or_chip, int boot_power) {
+void robotz::test_kick(int shoot_or_chip, int boot_power) {
     Robot_Chip_Or_Shoot = shoot_or_chip;
     Robot_Boot_Power = boot_power;
     zos::log("shoot/chip:{}  power:{}\n", shoot_or_chip, boot_power);

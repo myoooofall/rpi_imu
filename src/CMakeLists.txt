@@ -35,11 +35,16 @@ elseif(ROCKS_VERSION)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(fmt REQUIRED)
+# find_package(fmt REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Protobuf REQUIRED)
 find_library(RF24 rf24 REQUIRED)
 message(STATUS "using RF24 library: ${RF24}")
+
+find_package(zos_core REQUIRED)
+message("zos_core_FOUND : " ${zos_core_FOUND})
+message("zos_core_INCLUDE_DIRS : " ${zos_core_INCLUDE_DIRS})
+message("zos_core_LIBRARIES : " ${zos_core_LIBRARIES})
 
 # detect the CPU make and type
 # include(cmake/detectCPU.cmake) # sets the variable SOC accordingly
@@ -55,13 +60,13 @@ include_directories(
     ${YAML_CPP_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/share/proto
     ${CMAKE_CURRENT_SOURCE_DIR}/control
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
+    # ${CMAKE_CURRENT_SOURCE_DIR}/share/zos/project/core/include
+    # ${CMAKE_CURRENT_SOURCE_DIR}/share/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/robot
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-set(LibMRAA /usr/local/lib/aarch64-linux-gnu/libmraa.so)
+set(LibMRAA /usr/local/lib/libmraa.so)
 
 set(LIBS
     ${LIBS}
@@ -69,7 +74,7 @@ set(LIBS
     ${Protobuf_LIBRARIES}
     ${YAML_CPP_LIBRARIES}
     Threads::Threads
-    fmt::fmt
+    # fmt::fmt
     ${RF24}
 )
 file(GLOB SHARED_SOURCE_FILES
@@ -101,7 +106,8 @@ endif()
 file(GLOB TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_control.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
 )
 
@@ -112,7 +118,7 @@ foreach(test_file ${TEST_FILES})
     message("test file: " ${test_file} " -- " ${test_name})
 
     add_executable (${test_name} ${test_file_name} ${SHARED_SOURCE_FILES})
-    target_link_libraries (${test_name} ${LIBS})
+    target_link_libraries (${test_name} ${LIBS} zos::zos_core)
     if(CM4_VERSION)
         target_compile_definitions(${test_name} PRIVATE CM4_VERSION)
     elseif(ROCKS_VERSION)

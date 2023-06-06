@@ -1,6 +1,7 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
+#include <thread>
 
 // #ifdef OLD_VERSION
 #include "nrf2401.h"
@@ -24,6 +25,7 @@
 class robotz {
 public:
     robotz(int motor_num=4);
+    ~robotz() = default;
     uint8_t robot_num = config::robot_id;
     devicez gpio_devices;
     // #ifdef OLD_VERSION
@@ -31,6 +33,7 @@ public:
     // #else
     wifi_comm wifiz;
     // #endif
+    void _wifi_cb(const asio::ip::udp::endpoint&,const void*,size_t);
 
     // controlal bangbang;
     void testmode_on();
@@ -76,7 +79,7 @@ public:
     // uint8_t RX_Packet[25];
     void set_pid();
 
-    void run_per_13ms();
+    void run_per_13ms(std::stop_token);
     bool get_new_pack();
     void stand();
 
@@ -84,13 +87,13 @@ public:
 
     // self test 
     void self_test();
-    void move(int Vx, int Vy, int Vr);
-    void dribble(int d_power);
-    void kick(int shoot_or_chip, int boot_power);
-
+private:
+    void test_move(int Vx, int Vy, int Vr);
+    void test_dribble(int d_power);
+    void test_kick(int shoot_or_chip, int boot_power);
 private:
     YAML::Node config_yaml;
-    bool pid_busy = false;  // TODO: ?
+    std::atomic_bool pid_busy = false;  // TODO: ?
     robot_comm::Robot comm_pack; 
     std::vector<int> vel_pack = {0,0,0,0};
     std::vector<int> pid_pack = {0,0,0,0,0,0,0,0};
@@ -101,7 +104,8 @@ private:
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};       //[17-24]
     
     controlal control;
-    ThreadPool thpool;
+    // ThreadPool thpool;
+    std::jthread _jthread4control,_jthread4multicast;
 
     int test_charge_count = 0;
 
@@ -118,7 +122,7 @@ private:
     
     void pack(std::vector<uint8_t> &TX_Packet);
     int unpack(uint8_t *Packet);
-    bool unpack_proto(std::string proto_string);
+    // void unpack_proto(const void* ptr, size_t size);
     void motion_planner();
     void shoot_chip();
     

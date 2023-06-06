@@ -1,7 +1,7 @@
 #define OLD_VERSION
 
 #include "robotz.h"
-uint16_t Received_packet = 0;
+std::atomic_bool Received_packet = false;
 uint32_t Total_Missed_Package_Num = 0;
 bool received_packet_flag = false;
 

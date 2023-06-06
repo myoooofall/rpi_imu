@@ -27,10 +27,11 @@ namespace config {
     constexpr int radio_rx_csn = 0;
 
     // wifi
-    constexpr int receive_port = 1030;
-    constexpr int send_single_port = 30002;
-    constexpr int send_multicast_port = 30003;
-    constexpr char multicast_addr[] = "233.233.233.233";
+    constexpr int receive_port = 14234;
+    constexpr int send_single_port = 14134;
+    constexpr int send_multicast_port = 13134;
+    constexpr char multicast_addr[] = "225.225.225.225";
+    const std::string multicast_if_prefix = "192.168.31";
 
     constexpr int udp_freq = 1000;
     constexpr int robot_freq = 100;

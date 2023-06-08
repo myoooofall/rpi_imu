@@ -28,6 +28,7 @@ wifi_comm::wifi_comm(const zos::udp::__callback_ep_type& f):_context_manager(zos
         zos::info("\t{}\n",ip);
         if(ip.rfind(config::multicast_if_prefix,0) == 0){
             socket_send_multicast.set_interface(asio::ip::address::from_string(ip));
+            _self_ip = ip;
             zos::status("choose interface : {}\n",ip);
             break;
         }
@@ -56,9 +57,9 @@ void wifi_comm::udp_restart() {
 void wifi_comm::udp_sender(const void* p,const size_t size) {
     if(p == nullptr){
         zos::log("in udp_sender_normal function\n");
-        socket_send2master.send_to(fmt::format("normal udp test!!!"),receiver_endpoint);
+        socket_send2master.send_to(fmt::format("normal udp test!!!"),send2master_endpoint);
     }else{
-        socket_send2master.send_to(p,size, receiver_endpoint);
+        socket_send2master.send_to(p,size, send2master_endpoint);
     }
 }
 

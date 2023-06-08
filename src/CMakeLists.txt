@@ -79,7 +79,7 @@ set(LIBS
 )
 file(GLOB SHARED_SOURCE_FILES
     ${SHARED_SOURCE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto/robot_comm.pb.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/share/proto/*.pb.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/control/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/share/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/robot/robotz.cpp
@@ -104,9 +104,9 @@ endif()
 
 
 file(GLOB TEST_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_comm_2401.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_old_ver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/test_control.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/unit_test/*.cpp
 )

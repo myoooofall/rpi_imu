@@ -32,8 +32,11 @@ namespace config {
     constexpr int send_multicast_port = 13134;
     constexpr char multicast_addr[] = "225.225.225.225";
     const std::string multicast_if_prefix = "192.168.31";
+    constexpr int multicast_freq = 10;// Hz
+    constexpr int sendback_freq = 200;// Hz
 
     constexpr int udp_freq = 1000;
+    constexpr int control_cmd_freq = 500;
     constexpr int robot_freq = 100;
     
     // wheel

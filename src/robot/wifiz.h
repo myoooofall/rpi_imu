@@ -61,7 +61,9 @@ public:
     void udp_receiver();
     void udp_sender(const void* p,const size_t size);
     void udp_sender_mc(const void* p,const size_t size);
-
+    void set_master_ip(const std::string& ip){send2master_endpoint.address(asio::ip::address::from_string(ip)); _master_ip = ip;}
+    std::string get_master_ip(){return _master_ip;}
+    std::string get_ip(){ return _self_ip;}
 private:
     ContextManager _context_manager;
     void _cb(const void*, size_t);
@@ -72,6 +74,8 @@ private:
     zos::udp::socket socket_send2master;
     zos::udp::socket socket_send_multicast;
     zos::udp::socket socket_receiver;
+    std::string _self_ip = "";
+    std::string _master_ip = "";
 };
 
 #endif

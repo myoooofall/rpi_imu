@@ -14,7 +14,7 @@ int main() {
     // comm_2401 test;
     // test.start();
 
-    robotz zjunlict;
+    robotz zjunlict(robotz::COMM_TYPE_24L01);
     zjunlict.self_test();
     // zjunlict.testmode_on();
 

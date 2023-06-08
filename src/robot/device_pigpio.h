@@ -38,6 +38,7 @@ public:
 
     void adc_switch(int control_byte);
     std::vector<int> get_encoder();
+    std::array<float, MAX_MOTOR> get_encoder_array();
     std::vector<int> get_pid();
 
     void motors_write_pid(std::vector<int>& pid_pack);

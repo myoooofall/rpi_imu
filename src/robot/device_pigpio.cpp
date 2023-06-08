@@ -1,9 +1,13 @@
 #include "device_pigpio.h"
 
 devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
-    
+    int cfg = gpioCfgGetInternals();
+    cfg |= PI_CFG_NOSIGHANDLER;  // (1<<10)
+    gpioCfgSetInternals(cfg);
     if (gpioInitialise() < 0) {
         zos::error("pigpio error!\n");
+    }else {
+        zos::log("pigpio init\n");
     }
     motors_device(num, i2c_addr_t);
     dribbler_i2c_handle = i2cOpen(config::i2c_bus, config::dribbler_addr, 0);
@@ -48,8 +52,10 @@ void devicez::buzzer_once(int freq) {
 void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
     device_num = num;
 
-    if(i2c_addr_t)   std::copy(i2c_addr_t, i2c_addr_t+device_num, motors_i2c_addr);
-    else {
+    if(i2c_addr_t) {
+        std::copy(i2c_addr_t, i2c_addr_t+device_num, motors_i2c_addr);
+        zos::info("use manual i2c address\n");
+    }else {
         std::copy(config::motors_addr, config::motors_addr+device_num, motors_i2c_addr);
         zos::info("use default i2c address\n");
     }
@@ -145,7 +151,7 @@ uint8_t devicez::shoot_chip(uint8_t Robot_Chip_Or_Shoot, uint8_t Robot_Boot_Powe
         }
 
         if(Robot_Boot_Power > 0 && read_nano_uart()[1] > 100) {
-            std::chrono::duration<int, std::nano> _step = std::chrono::microseconds(80);
+            std::chrono::duration<int, std::nano> _step = std::chrono::microseconds(1);
         
             gpioWrite(kick_gpio, PI_HIGH);
             // zos::log("shoot: {}     ", _step*Robot_Boot_Power);
@@ -202,6 +208,13 @@ float devicez::adc_cap_vol() {
 std::vector<int> devicez::get_encoder() {
     std::scoped_lock lock(mutex_i2c);
     return vel_encoder;
+}
+
+std::array<float, MAX_MOTOR> devicez::get_encoder_array() {
+    std::array<float, MAX_MOTOR> vel_encoder_array;
+    std::scoped_lock lock(mutex_i2c);
+    std::copy_n(vel_encoder.begin(), MAX_MOTOR, vel_encoder_array.begin());
+    return vel_encoder_array;
 }
 
 std::vector<int> devicez::get_pid() {

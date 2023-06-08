@@ -21,10 +21,12 @@
 #endif
 
 #include <yaml-cpp/yaml.h>
+#include "zos/core.h"
+#include "zss_cmd.pb.h"
 
 class robotz {
 public:
-    robotz(int motor_num=4);
+    robotz(int _comm_type,int motor_num=4); // _comm_type : 1-24L01,2-wifi
     ~robotz() = default;
     uint8_t robot_num = config::robot_id;
     devicez gpio_devices;
@@ -33,48 +35,89 @@ public:
     // #else
     wifi_comm wifiz;
     // #endif
+private:
     void _wifi_cb(const asio::ip::udp::endpoint&,const void*,size_t);
-
+    void _send_status_thread(std::stop_token);
+    void _multicast_info_thread(std::stop_token);
+    void _control_thread(std::stop_token);
+    void _cmd_cb(const zos::Data&);
+    void _update_status(const double); // delta_t (ms)
+    zos::Data _cmd_data;
+    std::mutex _cmd_data_mutex;
+    zos::Publisher _cmd_publisher;
+    zos::Subscriber<2> _cmd_subsciber;
+public:
+    double ms_since_last_cmd_pack(){ return robot_status.time_since_last_pack; }
+public:
     // controlal bangbang;
     void testmode_on();
 
-    // uint8_t Robot_Is_Infrared;      //红外触发
-    // uint8_t Robot_Is_Boot_charged;  //电容充电到60V
-    uint8_t Robot_drib;
-    uint8_t Robot_Chip_Or_Shoot;    //chip:1  shoot:0
-    uint8_t Robot_Boot_Power = 0;
-    uint8_t Robot_Is_Report;
+    static constexpr int COMM_TYPE_24L01 = 1;
+    static constexpr int COMM_TYPE_WIFI = 2;
+    static constexpr int CMD_TYPE_NONE = 0;
+    static constexpr int CMD_TYPE_WHEEL = 1;
+    static constexpr int CMD_TYPE_VEL = 2;
+    static constexpr int CMD_TYPE_POSE = 3;
+    static constexpr int CMD_TYPE_CHASE = 4;
+    struct Robot_CMD {
+        int comm_type; // 1:24L01,2:WIFI
+        int cmd_type; // check zss_cmd.proto (1:CMD_WHEEL,2:CMD_VEL,3:CMD_POSE,4:CMD_CHASE)
+        bool need_report; // use in 24L01
 
-    int16_t Vx_package = 0, Vy_package = 0, Vr_package = 0;  //下发机器人速度
-    int16_t Vx_package_last = 0, Vy_package_last = 0, Vr_package_last = 0;  //上一帧下发机器人速度
-    double Vr_cal = 0.0;
-    double rot_factor = 0.0;
+        bool kick_en; // if kick enabled
+        bool kick_mode;    //chip:1  shoot:0
+        float desire_power; // speed(m/s) for flatkick or distance(m) for chip
+        float kick_discharge_time; // us
+        float drib_power; // -1 ~ 1
 
-    uint8_t acc_set = 150;  //加速度限制 16ms内合成加速度最大值，单位cm/s
-    uint16_t acc_r_set = 60;  //
-    uint8_t DEC_FRAME = 0;
-    uint8_t use_dir = 0;
+        // cmd_wheel
+        std::array<float, 4> motor_vel_target = {0,0,0,0}; // rad/s
+        // cmd_vel
+        float vx_target = 0, vy_target = 0, vr_target = 0;  // robot velocity: cm/s
+        bool use_dir = 0;
+        //// use to store
+        float vx_target_last = 0, vy_target_last = 0, vr_target_last = 0;
+        // cmd_pose, cmd_chase
+        // TODO
 
-    uint8_t Robot_Is_Infrared;      //红外触发
-    uint8_t Robot_Is_Boot_charged;  //电容充电到60V
-    // uint8_t Robot_drib;
-    // uint8_t Robot_Chip_Or_Shoot;    //chip:1  shoot:0
-    uint8_t Robot_Is_Shoot;
-    uint8_t Robot_Is_Chip;
-    uint8_t shoot_chip_flag = 0;
-    // uint8_t Robot_Boot_Power = 0;
-    // uint8_t Robot_Is_Report;
-    uint8_t Robot_Chipped = 0, Robot_Shooted = 0;
+        // old protocol
+        uint8_t acc_set = 150;  //加速度限制 16ms内合成加速度最大值，单位cm/s
+        uint16_t acc_r_set = 60;
+        
+        uint8_t DEC_FRAME = 0;
+        // store origin pb cmd
+    } robot_cmd;
+    ZSS::New::Robot_Command pb_cmd;
+    std::mutex _robot_cmd_mutex;
+
+    struct Robot_STATUS {
+        std::atomic<double> time_since_last_pack = 0; // ms
+        int id;
+
+        // use in 24L01
+        int left_report_pack_count = 0;
+        int transmitted_pack_count = 0; // check if send2master package normal
+
+        float robot_is_infrared;      // infrared detected time (ms) or -1
+        float robot_is_boot_charged;  // if capacitance charge finished (60v)
+        float last_kick_time = 10000.0; // ms [0 ~ 10000]
+        float robot_is_shooted; // ms
+        float robot_is_chipped; // ms
+
+        float cap_vol; // (v)
+        float bat_vol; // (v)
+        std::array<float, 4> motor_encoder = {0,0,0,0}; // [-4096~4095]
+        
+        float imu_theta; // suppose to be (-pi,pi]
+        std::array<float, 6> imu_info; // TODO
+
+        // uint8_t robot_status = 0, last_robot_status = 0;
+    } robot_status;
+    std::mutex _robot_status_mutex;
+
     uint8_t Robot_Status = 0, Last_Robot_Status = 0;
     uint8_t Kick_Count = 0;
     int8_t Left_Report_Package = 0;
-
-    uint16_t transmitted_packet = 0;
-    uint32_t AD_Battery = 0, AD_Battery_Last = 217586, AD_Boot_Cap = 0;
-    double Encoder_count_Motor1_avg = 0;
-    double Encoder_count_Motor2_avg = 0;
-    double Encoder_count_Motor3_avg = 0;
-    double Encoder_count_Motor4_avg = 0;
 
     // uint8_t RX_Packet[25];
     void set_pid();
@@ -105,7 +148,7 @@ private:
     
     controlal control;
     // ThreadPool thpool;
-    std::jthread _jthread4control,_jthread4multicast;
+    std::jthread _jthread4control,_jthread4multicast,_jthread4sendback;
 
     int test_charge_count = 0;
 

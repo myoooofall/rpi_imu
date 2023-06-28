@@ -10,8 +10,6 @@
 // #endif
 
 #include "robot_comm.pb.h"
-#include "controlal.h"
-// #include "controlal.h"
 
 #ifdef ROCKPIS_VERSION
     #include "device_ROCKS.h"
@@ -28,7 +26,8 @@ class robotz {
 public:
     robotz(int _comm_type,int motor_num=4); // _comm_type : 1-24L01,2-wifi
     ~robotz() = default;
-    uint8_t robot_num = config::robot_id;
+    uint8_t robot_id = config::robot_id;
+    int nrf2401_freq;
     devicez gpio_devices;
     // #ifdef OLD_VERSION
     comm_2401 nrf2401;
@@ -40,6 +39,7 @@ private:
     void _send_status_thread(std::stop_token);
     void _multicast_info_thread(std::stop_token);
     void _control_thread(std::stop_token);
+    void _gpio_thread(std::stop_token);
     void _cmd_cb(const zos::Data&);
     void _update_status(const double); // delta_t (ms)
     zos::Data _cmd_data;
@@ -47,9 +47,8 @@ private:
     zos::Publisher _cmd_publisher;
     zos::Subscriber<2> _cmd_subsciber;
 public:
-    double ms_since_last_cmd_pack(){ return robot_status.time_since_last_pack; }
+    double ms_since_last_cmd_pack(){ return _time_since_last_pack; }
 public:
-    // controlal bangbang;
     void testmode_on();
 
     static constexpr int COMM_TYPE_24L01 = 1;
@@ -67,7 +66,7 @@ public:
         bool kick_en; // if kick enabled
         bool kick_mode;    //chip:1  shoot:0
         float desire_power; // speed(m/s) for flatkick or distance(m) for chip
-        float kick_discharge_time; // us
+        float kick_discharge_time = 0; // us
         float drib_power; // -1 ~ 1
 
         // cmd_wheel
@@ -91,8 +90,8 @@ public:
     std::mutex _robot_cmd_mutex;
 
     struct Robot_STATUS {
-        std::atomic<double> time_since_last_pack = 0; // ms
         int id;
+        int team = 0; // 1 for blue,2 for yellow
 
         // use in 24L01
         int left_report_pack_count = 0;
@@ -101,8 +100,8 @@ public:
         float robot_is_infrared;      // infrared detected time (ms) or -1
         float robot_is_boot_charged;  // if capacitance charge finished (60v)
         float last_kick_time = 10000.0; // ms [0 ~ 10000]
-        float robot_is_shooted; // ms
-        float robot_is_chipped; // ms
+        float robot_is_shooted = 10000.0; // ms
+        float robot_is_chipped = 10000.0; // ms
 
         float cap_vol; // (v)
         float bat_vol; // (v)
@@ -113,6 +112,7 @@ public:
 
         // uint8_t robot_status = 0, last_robot_status = 0;
     } robot_status;
+    std::atomic<double> _time_since_last_pack = 0; // ms
     std::mutex _robot_status_mutex;
 
     uint8_t Robot_Status = 0, Last_Robot_Status = 0;
@@ -139,6 +139,7 @@ private:
     std::atomic_bool pid_busy = false;  // TODO: ?
     robot_comm::Robot comm_pack; 
     std::vector<int> vel_pack = {0,0,0,0};
+    std::array<std::atomic<float>,4> vel_read_temp = {0,0,0,0};
     std::vector<int> pid_pack = {0,0,0,0,0,0,0,0};
     std::vector<int> pid_real = {0,0,0,0,0,0,0,0};
     std::vector<uint8_t> TX_Packet = {
@@ -146,9 +147,15 @@ private:
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5,        //[9-16]
         0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};       //[17-24]
     
-    controlal control;
+    bool _infrared = 0;
+    float _cap_vol; // (v)
+    float _bat_vol; // (v)
+    bool _shooted;
+    bool _chipped;
+
     // ThreadPool thpool;
     std::jthread _jthread4control,_jthread4multicast,_jthread4sendback;
+    std::jthread _jthread4gpio;
 
     int test_charge_count = 0;
 
@@ -166,14 +173,17 @@ private:
     void pack(std::vector<uint8_t> &TX_Packet);
     int unpack(uint8_t *Packet);
     // void unpack_proto(const void* ptr, size_t size);
-    void motion_planner();
+    void motion_planner(const double _dt);// _dt in us
     void shoot_chip();
     
     int infrare_detect();
     void infrare_toggin();
 
-    void pid_read();
-    void pid_save();
+    void read_config_yaml();
+
+    void save_pid();
+    void save_id(int robot_id_new);
+    void save_freq(int nrf2401_freq_new);
 
 };
 

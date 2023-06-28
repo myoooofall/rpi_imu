@@ -15,7 +15,7 @@ int main() {
     // test.start();
 
     robotz zjunlict(robotz::COMM_TYPE_24L01);
-    zjunlict.self_test();
+    // zjunlict.self_test();
     // zjunlict.testmode_on();
 
     int count = 0;
@@ -32,7 +32,11 @@ int main() {
             // zos::info("vx: {}   vy: {}\n", (rxbuf[2] & 0x7f) + ((rxbuf[17] & 0xc0) << 1), (rxbuf[3] & 0x7f) + ((rxbuf[17] & 0x30) << 3));
             received_packet_flag = zjunlict.get_new_pack();
 
-            Total_Missed_Package_Num = 0;
+            if(received_packet_flag) {
+                Total_Missed_Package_Num = 0;
+            }else {
+                Total_Missed_Package_Num++;
+            }
 
         }else if (Total_Missed_Package_Num++ >= 200) {
             // Missing package for 1 seconds

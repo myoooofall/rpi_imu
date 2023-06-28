@@ -29,15 +29,16 @@
 
 class comm_2401 {
 public:
-    comm_2401() : radio_TX(config::radio_tx_ce_pin, config::radio_tx_csn),radio_RX(config::radio_rx_ce_pin, config::radio_rx_csn) {
-        init_2401(&radio_TX);
-        init_2401(&radio_RX);
+    comm_2401() : radio_TX(config::radio_tx_ce_pin, config::radio_tx_csn) {
+        radio_in_use = &radio_TX;
+        // radio_TX.startListening();
+        // init_2401(&radio_RX);
+        // radio_RX.startListening();
         // put radio_TX in TX mode
         // Start 2401 for receiving
         // radio_RX.powerUp();
         // init_2401(&radio_RX);
-        radio_TX.stopListening();
-        radio_RX.startListening();
+        init_2401(radio_in_use);
         start();
     };
     void start();
@@ -45,6 +46,8 @@ public:
     bool get_receive_flag();
     void set_receive_flag();
     uint8_t* get_rxbuf();
+
+    void set_freq(int freq);
 
     std::mutex mutex_comm_2401;
     ~comm_2401() {
@@ -55,6 +58,7 @@ public:
 private:
     RF24 radio_TX;
     RF24 radio_RX;
+    RF24* radio_in_use = NULL;
     void init_2401(RF24* radio);
     void config_2401(RF24* radio, uint8_t* txbuf);
     int comm_2401_test();

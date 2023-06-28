@@ -1,18 +1,20 @@
 #include "device_pigpio.h"
 
 devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
-    int cfg = gpioCfgGetInternals();
-    cfg |= PI_CFG_NOSIGHANDLER;  // (1<<10)
-    gpioCfgSetInternals(cfg);
-    if (gpioInitialise() < 0) {
-        zos::error("pigpio error!\n");
+    // int cfg = gpioCfgGetInternals();
+    // cfg |= PI_CFG_NOSIGHANDLER;  // (1<<10)
+    // gpioCfgSetInternals(cfg);
+    auto _code_ = gpioInitialise();
+    if (_code_ < 0) {
+        zos::error("pigpio error!{}\n",_code_);
     }else {
         zos::log("pigpio init\n");
     }
+    
     motors_device(num, i2c_addr_t);
     dribbler_i2c_handle = i2cOpen(config::i2c_bus, config::dribbler_addr, 0);
-    adc_i2c_handle = i2cOpen(config::i2c_bus, config::adc_addr, 0);
-    i2cWriteByte(adc_i2c_handle, 0x40);
+
+    _jthread4i2c = std::jthread(std::bind(&devicez::_motors_run_thread,this,std::placeholders::_1));
 
     // shoot
     gpioSetMode(GPIO_SHOOT, PI_OUTPUT);
@@ -39,14 +41,40 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
 }
 
 void devicez::buzzer_start() {
-    buzzer_once(500);
-    buzzer_once(1600);
+    std::thread _buzzer = std::thread([this] {
+        buzzer_once(500);
+        buzzer_once(1600);
+    });
+    _buzzer.join();
+}
+void devicez::buzzer_set_freq_num() {
+    std::thread _buzzer = std::thread([this] {
+        buzzer_once(1600);
+    });
+    _buzzer.join();
 }
 void devicez::buzzer_once(int freq) {
     gpioSetPWMfrequency(GPIO_BUZZER, freq);
     gpioPWM(GPIO_BUZZER, 20);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     gpioPWM(GPIO_BUZZER, 0);
+}
+
+void led_flash(int led_id, int level) {
+    int gpio_led;
+    switch (led_id) {
+        case 0:
+            gpio_led = GPIO_LED0;
+            break;
+        case 1:
+            gpio_led = GPIO_LED1;
+            break;
+        case 2:
+            gpio_led = GPIO_LED2;
+            break;
+    }
+    gpioSetMode(gpio_led, PI_OUTPUT);
+    gpioWrite(gpio_led, level);
 }
 
 void devicez::motors_device(int num, uint8_t *i2c_addr_t) {
@@ -89,16 +117,75 @@ void devicez::dribbler(int dribble_val) {
     // i2cWriteDevice(dribbler_i2c_handle, (char*)dribble_val, 1);
 }
 
+void devicez::_motors_run_thread(std::stop_token _stop_token) {
+    int count_i2c = 0;
+    bool test_output = false;
+    while (true) {
+        if (count_i2c++ > 1000) {
+            test_output = true;
+            zos::warning("i2c rx/tx for 1000 times\n");
+            count_i2c = 0;
+        }else{
+            test_output = false;
+        }
+        for (int motor_id=0; motor_id<device_num; motor_id++) {
+            // write
+            uint8_t vel_pack_temp[3] = {0x0};
+            uint8_t encoder_pack[3] = {0x0};
+            vel_pack_temp[0] = 0xfa;
+            vel_pack_temp[1] = ((abs(vel_target_atomic[motor_id]) >> 8) & 0x1f) | (((vel_target_atomic[motor_id]>=0)?0:1) << 5) | (0x01 << 6);
+            vel_pack_temp[2] = (abs(vel_target_atomic[motor_id]) & 0xff);
+            {
+                std::scoped_lock lock(mutex_i2c);
+                // for(int i=0; i<3; i++) {
+                //     i2cWriteByte(motors_i2c_handle[motor_id], vel_pack_temp[i]);
+                // }
+                i2cWriteDevice(motors_i2c_handle[motor_id], (char*)vel_pack_temp, 3);
+                // zos::log("motor id: {}, vel_int: {}, vel_pack_temp: {:#04x} {:#04x} {:#04x}\n", motor_id, vel, (char)vel_pack_temp[0], (char)vel_pack_temp[1], (char)vel_pack_temp[2]);
+                // std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                // std::this_thread::sleep_for(std::chrono::microseconds(1));
+                // for(int i=0; i<3; i++) {
+                //     encoder_pack[i] = i2cReadByte(motors_i2c_handle[motor_id]);
+                // }
+
+                i2cReadDevice(motors_i2c_handle[motor_id], (char*)encoder_pack, 3);
+                // zos::warning("encoder pack: {} {} {}\n", encoder_pack[0], encoder_pack[1], encoder_pack[2]);
+            }
+            // encoder
+            if (encoder_pack[0] == 0xfa) {
+                float vel_temp = ((encoder_pack[1] & 0x1f) << 8) + encoder_pack[2];
+                vel_encoders_atomic[motor_id] = ((encoder_pack[1] & 0x20)>>5)?(-vel_temp):vel_temp;
+                // zos::status("encoder id: {}, vel_encoders_atomic: {}\n", motor_id, vel_encoders_atomic[motor_id]);
+            }else {
+                vel_encoders_atomic[motor_id] = 0;
+                // zos::warning("wrong pack: {} {} {}\n", encoder_pack[0], encoder_pack[1], encoder_pack[2]);
+            }
+            // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+        }
+    }
+}
+
+void devicez::set_motors_vel(std::vector<int>& vel_pack) {
+    std::copy_n(vel_pack.begin(), MAX_MOTOR, vel_target_atomic.begin());
+}
+
+std::array<float, MAX_MOTOR> devicez::get_motors_vel() {
+    std::array<float, MAX_MOTOR> vel_encoders_array;
+    std::copy_n(vel_encoders_atomic.begin(), MAX_MOTOR, vel_encoders_array.begin());
+    return vel_encoders_array;
+}
+
 void devicez::motors_write(std::vector<int>& vel_pack) {
     for (int i=0; i<device_num; i++) {
         i2c_th_single[i] = std::jthread(&devicez::motors_write_single, this, i, vel_pack[i]);
         // i2c_th_single[i].join();
     }
     // Output
-    if (device_num && i2c_testmode) {
-        zos::log("motor write: {}\n", fmt::join(vel_pack, " "));
-        zos::status("motor encoder: {}\n", fmt::join(vel_encoder, " "));
-    }
+    // if (device_num && i2c_testmode) {
+    //     zos::log("motor write: {}\n", fmt::join(vel_pack, " "));
+    //     zos::status("motor encoder: {}\n", fmt::join(vel_encoder, " "));
+    // }
 }
 
 void devicez::motors_write_single(int motor_id, int vel) {
@@ -111,10 +198,16 @@ void devicez::motors_write_single(int motor_id, int vel) {
         std::scoped_lock lock(mutex_i2c);
         i2cWriteDevice(motors_i2c_handle[motor_id], (char*)vel_pack, 3);
         // zos::log("motor id: {}, vel_int: {}, vel_pack: {:#04x} {:#04x} {:#04x}\n", motor_id, vel, (char)vel_pack[0], (char)vel_pack[1], (char)vel_pack[2]);
-        i2cReadDevice(motors_i2c_handle[motor_id], (char*)encoder_pack, 3);
-        // zos::warning("encoder pack: {} {} {}\n", encoder_pack[0], encoder_pack[1], encoder_pack[2]);
+        int read_status = i2cReadDevice(motors_i2c_handle[motor_id], (char*)encoder_pack, 3);
+        // for(int i=0; i<3;i++) {
+        //     encoder_pack[i] = i2cReadByte(motors_i2c_handle[i]);
+        // }
+        if(read_status > 0) {
+            zos::warning("#{} encoder pack: {} {} {}\n", motor_id, encoder_pack[0], encoder_pack[1], encoder_pack[2]);
+        }
     }
     
+    // unit rad/s * 10
     if (encoder_pack[0] == 0xfa) {
         int vel_temp = ((encoder_pack[1] & 0x1f) << 8) + encoder_pack[2];
         vel_encoder[motor_id] = ((encoder_pack[1] & 0x20)>>5)?(-vel_temp):vel_temp;
@@ -130,94 +223,40 @@ void devicez::motors_write_single(int motor_id, int vel) {
     // zos::status("motor id: {}, vel_encoder: {}\n", motor_id, vel_encoder[motor_id]);
 }
 
-void devicez::charge_switch() {
-    float boot_cap_vol = adc_cap_vol();
-    if (boot_cap_vol > 200) {
-        gpioWrite(GPIO_CHARGE, PI_LOW);
-        zos::status("stop charge (now {}V)\n", boot_cap_vol);
-    }else if (boot_cap_vol < 100) {
-        gpioWrite(GPIO_CHARGE, PI_HIGH);
-        // zos::status("start charge\n");
+float devicez::shoot_chip(bool kick_mode, float kick_discharge_time) {
+    int kick_flag = -1;
+    int kick_gpio;
+    if(kick_mode == SHOOT_MODE) {
+        kick_gpio = GPIO_SHOOT;
+    }else if(kick_mode == CHIP_MODE){
+        kick_gpio = GPIO_CHIP;
+    }else {
+        zos::error("wrong kick mode\n");
+        return -1;
     }
-}
 
-uint8_t devicez::shoot_chip(uint8_t Robot_Chip_Or_Shoot, uint8_t Robot_Boot_Power) {
-    std::jthread th_shoot([this, Robot_Chip_Or_Shoot, Robot_Boot_Power] {
-        int kick_gpio;
-        if(Robot_Chip_Or_Shoot == 0) {
-            kick_gpio = GPIO_SHOOT;
-        }else {
-            kick_gpio = GPIO_CHIP;
-        }
-
-        if(Robot_Boot_Power > 0 && read_nano_uart()[1] > 100) {
+    if(kick_discharge_time > 0) {
+        // std::jthread th_shoot([this, kick_gpio, kick_discharge_time] {
+            auto time_pre = std::chrono::steady_clock::now();
             std::chrono::duration<int, std::nano> _step = std::chrono::microseconds(1);
-        
             gpioWrite(kick_gpio, PI_HIGH);
-            // zos::log("shoot: {}     ", _step*Robot_Boot_Power);
-            std::this_thread::sleep_for(_step*Robot_Boot_Power);
+            // zos::log("shoot: {}     ", _step*kick_discharge_time);
+            std::this_thread::sleep_for(_step*(int)kick_discharge_time);
             gpioWrite(kick_gpio, PI_LOW);
-            zos::status("vol remain: {}\n", read_nano_uart()[1]);
-        }else {
-            zos::log("low voltage: {}, boot power: {}\n", read_nano_uart()[1], Robot_Boot_Power);
-        }
-        gpioWrite(kick_gpio, PI_LOW);
-    });
-    th_shoot.detach();
-    return 0;
+            auto time_now = std::chrono::steady_clock::now();
+            auto step = (time_now - time_pre);
+            zos::status("kick power: {}, period time: {}, vol remain: {}\n", (int)kick_discharge_time, step.count()/1000, read_nano_uart()[1]);
+        // });
+        // th_shoot.detach();
+        kick_flag = kick_mode;
+    }else {
+        zos::log("kick power: {}, low voltage: {}, boot power: {}\n", (int)kick_discharge_time, read_nano_uart()[1], (int)kick_discharge_time);
+    }
+    // gpioWrite(kick_gpio, PI_LOW);
+    return kick_flag;
 }
 
-void devicez::adc_switch(int control_byte) {
-    std::jthread i2c_th([this, control_byte] {
-        // std::scoped_lock lock(mutex_i2c);
-        i2cWriteByte(adc_i2c_handle, control_byte);
-    });
-}
-
-int devicez::adc_infrare() {
-    std::scoped_lock lock(mutex_i2c);
-    adc_switch(0x40);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    // zos::status("adc value: {}\n", adc_val);
-    return adc_val/130;
-}
-
-float devicez::adc_bat_vol() {
-    std::scoped_lock lock(mutex_i2c);
-    adc_switch(0x42);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    // float cap_vol = adc_val * config::adc_cap_vol_k;
-    // float cap_vol = adc_val;
-    // zos::info("battery voltage: {}\n", adc_val);
-    return adc_val;
-}
-
-float devicez::adc_cap_vol() {
-    std::scoped_lock lock(mutex_i2c);
-    adc_switch(0x41);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    adc_val = i2cReadByte(adc_i2c_handle);
-    float cap_vol = adc_val * config::adc_cap_vol_k;
-    // float cap_vol = adc_val;
-    // zos::status("cap voltage: {}\n", cap_vol);
-    return cap_vol;
-}
-
-std::vector<int> devicez::get_encoder() {
-    std::scoped_lock lock(mutex_i2c);
-    return vel_encoder;
-}
-
-std::array<float, MAX_MOTOR> devicez::get_encoder_array() {
-    std::array<float, MAX_MOTOR> vel_encoder_array;
-    std::scoped_lock lock(mutex_i2c);
-    std::copy_n(vel_encoder.begin(), MAX_MOTOR, vel_encoder_array.begin());
-    return vel_encoder_array;
-}
-
-std::vector<int> devicez::get_pid() {
+std::vector<int> devicez::get_motors_pid() {
     // std::scoped_lock lock(mutex_i2c);
     // return vel_encoder;
     char pid_req_pack_temp[3] = {0xf9};
@@ -243,7 +282,7 @@ std::vector<int> devicez::get_pid() {
     return pid_real_temp;
 }
 
-void devicez::motors_write_pid(std::vector<int>& pid_pack) {
+void devicez::set_motors_pid(std::vector<int>& pid_pack) {
     char pid_pack_temp_long[8];
     std::copy(begin(pid_pack), end(pid_pack), pid_pack_temp_long);
     char pid_pack_temp[3] = {0xf5};
@@ -316,13 +355,23 @@ std::vector<int> devicez::read_nano_uart() {
     int bat_vol_10x;
     read_uart(nano_buff);
     if((nano_buff[0] & 0xfa) == 0xfa) {
-        infrare_flag = nano_buff[0] & 0x01;
-        cap_vol = nano_buff[1];
-        bat_vol_10x = nano_buff[2];
+        // infrare_flag = nano_buff[0] & 0x01;
+        // cap_vol = nano_buff[1];
+        // bat_vol_10x = nano_buff[2];
 
-        nano_pack[0] = infrare_flag;
-        nano_pack[1] = cap_vol;
-        nano_pack[2] = bat_vol_10x;
+        // nano_pack[0] = infrare_flag;
+        // nano_pack[1] = cap_vol;
+        // nano_pack[2] = bat_vol_10x;
+        nano_pack[0] = nano_buff[0];
+        nano_pack[1] = nano_buff[1];
+        nano_pack[2] = nano_buff[2];
+    }else if(nano_buff[0] == 0xaa){
+        nano_pack[0] = nano_buff[0];
+        nano_pack[1] = nano_buff[1];
+        nano_pack[2] = nano_buff[2];
     }
+    // else {
+    //     zos::log("wrong pack: {:#04x}\n", nano_buff[0]);
+    // }
     return nano_pack;
 }

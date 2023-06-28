@@ -21,9 +21,9 @@ namespace config {
     constexpr uint8_t adc_addr = 0x48;
     constexpr float adc_cap_vol_k = 2.23; // 5/255*1008.87/8.87
     // nrf2401
-    constexpr int radio_tx_ce_pin = 22;
-    constexpr int radio_tx_csn = 1; // <a>*10+<b>; spidev1.0 is 10, spidev1.1 is 11 etc..
-    constexpr int radio_rx_ce_pin = 27;
+    constexpr int radio_tx_ce_pin = 27;
+    constexpr int radio_tx_csn = 0; // <a>*10+<b>; spidev1.0 is 10, spidev1.1 is 11 etc..
+    constexpr int radio_rx_ce_pin = 22;
     constexpr int radio_rx_csn = 0;
 
     // wifi
@@ -36,7 +36,7 @@ namespace config {
     constexpr int sendback_freq = 200;// Hz
 
     constexpr int udp_freq = 1000;
-    constexpr int control_cmd_freq = 500;
+    constexpr int control_cmd_freq = 300;
     constexpr int robot_freq = 100;
     
     // wheel
@@ -44,12 +44,11 @@ namespace config {
     constexpr double car_angle_back = 45.0*PI/180;
     constexpr double vel_ratio = 3.18/2.8*10;
     // constexpr double vel_ratio = 0.520573;
-    //control相关
-    constexpr double control_rate = 500;
-    constexpr double dt = 1/control_rate; //s
-    constexpr double a_max = 20000;
-    constexpr double v_max = 3000;
-    constexpr double d_max = 20000; //mm/s
+
+    // control params;
+    constexpr double dt_us = 1000000*1/control_cmd_freq; //s
+    constexpr double a_max = 8.0; // m/s^2
+    constexpr double v_max = 6.0; // m/s
 }
 
 #endif

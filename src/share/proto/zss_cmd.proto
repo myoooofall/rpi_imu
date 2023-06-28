@@ -5,16 +5,15 @@ package ZSS.New;
 message Robots_Status{
     repeated Robot_Status robots_status = 1;
 }
-
+enum Team{
+    UNKNOWN = 0;
+    BLUE = 1;
+    YELLOW = 2;
+}
 // use to multicast in LAN
 message Multicast_Status{
     string ip = 1;
     string uuid = 2;
-    enum Team{
-        UNKNOWN = 0;
-        BLUE = 1;
-        YELLOW = 2;
-    }
     Team team = 3;
     int32 robot_id = 4;
     // battery voltage
@@ -25,7 +24,7 @@ message Multicast_Status{
 
 message Robot_Status {
     int32 robot_id = 1;
-    // infrared sensor with elasped time , positive means infrared is detected, or -1
+    // infrared sensor with elasped time , positive means infrared is detected
     float infrared = 2;
     // elasped time since last kick
     float flat_kick = 3;
@@ -35,12 +34,14 @@ message Robot_Status {
     float imu_theta = 5;
     // battery voltage
     float battery = 6;
-    // capacitance  (v)
+    // capacitance
     float capacitance = 7;
     // odom of imu
     Odom odom = 8;
     // wheel encoder value
     repeated float wheel_encoder = 9;
+    // team
+    Team team = 10;
 }
 
 message Robots_Command {

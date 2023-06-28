@@ -1,3 +1,5 @@
+id: 0
+freq: 8
 motor_pid:
   - id: 0
     p: 60

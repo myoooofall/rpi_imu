@@ -11,8 +11,8 @@ int main(){
     zos::status("starting...\n");
     robotz zjunlict(robotz::COMM_TYPE_WIFI);
     while (true){
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        if(zjunlict.ms_since_last_cmd_pack() > 500){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if(zjunlict.ms_since_last_cmd_pack() > 100){
             zjunlict.stand();
         }
     }

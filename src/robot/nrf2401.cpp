@@ -1,16 +1,19 @@
 #include "nrf2401.h"
+#include "device_pigpio.h"
 
 using namespace std;
 
 // #include "2401.h"
-uint8_t tx_frequency = 94;	//24L01频率; Freq 6: 24; Freq 8: 90
-uint8_t rx_frequency = 94;	//24L01频率; Freq 6: 24; Freq 8: 90
+uint8_t tx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
+uint8_t rx_frequency = 90;	//24L01频率; Freq 6: 24; Freq 8: 90
 uint8_t bandwidth = 25;  //24L01带宽
 
 static bool radioNumber = 1; // 0 uses address[0] to transmit, 1 uses address[1] to transmit
 static uint8_t address[2][6] = {{0x00,0x98,0x45,0x71,0x10}, {0x11,0xa9,0x56,0x82,0x21}};   // 0: Robot; 1: TR
 
 void comm_2401::start() {
+    devicez::set_nrf2401_en(1);
+    radio_in_use->startListening();
     zos::log("nrf2401 start!\n");
     std::jthread th_comm(&comm_2401::comm_2401_test, this);
     th_comm.detach();
@@ -31,7 +34,7 @@ void comm_2401::init_2401(RF24* radio) {
     radio->setChannel(tx_frequency);    // RF_CH; Freq 6: 24; Freq 8: 90
     radio->setPayloadSize(MAX_SIZE);    // RX_PW_P0
     radio->setDataRate(RF24_1MBPS);     // RF_SETUP
-    radio->setPALevel(RF24_PA_LOW);    // RF24_PA_MAX is default.
+    radio->setPALevel(RF24_PA_HIGH);    // RF24_PA_MAX is default.
     // set the TX address of the RX node into the TX pipe
     radio->openWritingPipe(address[radioNumber]);     // always uses pipe 0
 
@@ -62,6 +65,25 @@ void comm_2401::config_2401(RF24* radio, uint8_t* txbuf) {
         std::cout << "Wrong config package" << std::endl;
     }
 }
+
+void comm_2401::set_freq(int freq) {
+    int freq_real;
+    if ( freq >=0 && freq < 8 ) {
+        freq_real = 4*freq;
+    }else if (freq >=8 && freq < 13) {
+        freq_real = 4*freq + 58;
+    }else {
+        return;
+    }
+    {
+        std::scoped_lock lock(mutex_comm_2401);
+        radio_in_use->stopListening();
+        radio_in_use->setChannel(freq_real);
+        radio_in_use->startListening();
+    }
+    // radio_RX.setChannel(freq);
+}
+
 // std::string receiver_addr = "255.255.255.255";
 // std::string multicast_addr = "233.233.233.233";
 // asio::ip::udp::endpoint receiver_endpoint_rx;
@@ -85,31 +107,54 @@ int comm_2401::comm_2401_test() {
         // }
         status_count++;
         // uint8_t pipe;
-        
-        if (radio_RX.available()) {                        // is there a payload? get the pipe number that recieved it
-            // uint8_t bytes = radio_RX.getPayloadSize();          // get the size of the payload
+
+        // uint8_t tx_buf[5] = {0x0,0x1,0x2,0x9,0x8};
+        // if(status_count > 10) {
+        //     send(std::data(tx_buf));
+        //     status_count = 0;
+        // }
+        // devicez::set_nrf2401_en(1);
+        // radio_TX.startListening();
+        // std::this_thread::sleep_for(std::chrono::milliseconds(15));
+        if (radio_in_use->available()) {
             std::scoped_lock lock(mutex_comm_2401);
-            // zos::log("new pack\n");
-            radio_RX.read(rxbuf, MAX_SIZE);                     // fetch payload from FIFO
+            radio_in_use->read(rxbuf, MAX_SIZE);
             receive_flag = true;
-
-            // std::string str(rxbuf,rxbuf+MAX_SIZE);
-
-            // socket_rx.send_to(str, receiver_endpoint_rx);
-
-
-            // char pAscii[MAX_SIZE];
-            // HexToAscii(rxbuf, pAscii, MAX_SIZE);
-            // std::string ascii(pAscii);
             status_count = 0;
-            // cout << str << endl;
-        }else if(status_count > 10) {
+            // zos::log("received\n");
+        }else if(status_count > 50) {
             std::scoped_lock lock(mutex_comm_2401);
-            change_mode_to_RX();
-            status_count = 0;
-        }else {
-            std::this_thread::sleep_for(std::chrono::microseconds(500));
+            devicez::set_nrf2401_en(1);
+            radio_in_use->startListening();
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+
+        continue;
+        
+        
+        // if (radio_RX.available()) {                        // is there a payload? get the pipe number that recieved it
+        //     // uint8_t bytes = radio_RX.getPayloadSize();          // get the size of the payload
+        //     std::scoped_lock lock(mutex_comm_2401);
+        //     // zos::log("new pack\n");
+        //     radio_RX.read(rxbuf, MAX_SIZE);                     // fetch payload from FIFO
+        //     receive_flag = true;
+
+        //     // std::string str(rxbuf,rxbuf+MAX_SIZE);
+
+        //     // socket_rx.send_to(str, receiver_endpoint_rx);
+
+
+        //     // char pAscii[MAX_SIZE];
+        //     // HexToAscii(rxbuf, pAscii, MAX_SIZE);
+        //     // std::string ascii(pAscii);
+        //     status_count = 0;
+        //     // cout << str << endl;
+        // }else if(status_count > 50) {
+        //     std::scoped_lock lock(mutex_comm_2401);
+        //     change_mode_to_RX();
+        //     status_count = 0;
+        // }
+        // std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
     zos::error("2401 die!\n");
     return 0;
@@ -179,14 +224,17 @@ void comm_2401::change_mode_to_RX() {
 
 void comm_2401::send(const void* tx_buf) {
     std::scoped_lock lock(mutex_comm_2401);
-    radio_RX.stopListening();
+    // change_mode_to_TX();
+    devicez::set_nrf2401_en(0);
+    radio_in_use->stopListening();
 
-    if (radio_RX.write(tx_buf, MAX_SIZE)) {
-        zos::status("pack transmission success\n");
+    if (radio_in_use->write(tx_buf, MAX_SIZE)) {
+        // zos::status("pack transmission success\n");
     }else {
         zos::warning("pack transmission failed\n");
     }
-    radio_RX.startListening();
+    devicez::set_nrf2401_en(1);
+    radio_in_use->startListening();
 
     // change_mode();
     // radio_TX.stopListening();   // put radio_TX in TX mode

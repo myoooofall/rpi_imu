@@ -22,7 +22,7 @@ public:
     virtual int motors_detect() = 0;
     virtual void motors_write(std::vector<int>& vel_pack) = 0;
     virtual void motors_write_single(int motor_id, int vel) = 0;
-    virtual uint8_t shoot_chip(uint8_t Robot_Is_Boot_charged, uint8_t Robot_Boot_Power) = 0;
+    virtual float shoot_chip(bool kick_mode, float kick_discharge_time) = 0;
     virtual void infrare_detect() = 0;
     virtual void dribbler(int dribble_val) = 0;
 

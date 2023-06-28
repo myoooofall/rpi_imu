@@ -33,11 +33,11 @@ namespace config {
     constexpr char multicast_addr[] = "225.225.225.225";
     const std::string multicast_if_prefix = "192.168.31";
     constexpr int multicast_freq = 10;// Hz
-    constexpr int sendback_freq = 200;// Hz
+    constexpr int sendback_freq = 250;// Hz
 
     constexpr int udp_freq = 1000;
     constexpr int control_cmd_freq = 300;
-    constexpr int robot_freq = 100;
+    constexpr int robot_freq = 250;
     
     // wheel
     constexpr double car_angle_front = 58.0*PI/180;

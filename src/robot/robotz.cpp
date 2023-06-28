@@ -431,25 +431,27 @@ void robotz::_gpio_thread(std::stop_token _stop_token) {
         if (_s.robot_is_infrared>0 && _c.kick_en && _s.last_kick_time>800) {
             zos::log("kick info   en:{}, mode:{}, time:{}   ir: {}, last_time: {}\n", _c.kick_en, _c.kick_mode, _c.kick_discharge_time, _s.robot_is_infrared, _s.last_kick_time);
             kick_status = gpio_devices.shoot_chip(_c.kick_mode, _c.kick_discharge_time);
-            // _s.last_kick_time = 0;
-            // _c.kick_en = false;
-            // _c.kick_discharge_time = 0;
             // TODO: _s.robot_is_shooted/chipped
-        }
-        {
-            std::scoped_lock lock{_robot_status_mutex};
-            auto& _status = robot_status;
-            switch(kick_status) {
-                case SHOOT_MODE:
-                    zos::log("--kick status: shoot!\n");
-                    _status.robot_is_shooted = 0;
-                    break;
-                case CHIP_MODE:
-                    zos::log("--kick status: chip!\n");
-                    _status.robot_is_chipped = 0;
-                    break;
+            {
+                std::scoped_lock lock{_robot_status_mutex,_robot_cmd_mutex};
+                auto& _status = robot_status;
+                switch(kick_status) {
+                    case SHOOT_MODE:
+                        zos::log("--kick status: shoot!\n");
+                        _status.robot_is_shooted = 0;
+                        break;
+                    case CHIP_MODE:
+                        zos::log("--kick status: chip!\n");
+                        _status.robot_is_chipped = 0;
+                        break;
+                }
+                robot_status.last_kick_time = 0;
+                robot_cmd.kick_en = false;
+                robot_cmd.kick_discharge_time = 0;
             }
+            std::this_thread::sleep_for(std::chrono::microseconds(10000));
         }
+        // std::this_thread::sleep_for(std::chrono::microseconds(1000));
         robot_rate.sleep();
     }
 }

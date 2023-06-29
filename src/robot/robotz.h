@@ -97,7 +97,7 @@ public:
         int left_report_pack_count = 0;
         int transmitted_pack_count = 0; // check if send2master package normal
 
-        float robot_is_infrared;      // infrared detected time (ms) or -1
+        float robot_is_infrared = -1;      // infrared detected time (ms) or -1
         float robot_is_boot_charged;  // if capacitance charge finished (60v)
         float last_kick_time = 10000.0; // ms [0 ~ 10000]
         float robot_is_shooted = 10000.0; // ms
@@ -163,7 +163,6 @@ private:
 
     // int infr_count = 0;
     bool valid_pack = 0;
-    int chipshoot_timerdelay_flag = 0;
     
     const double Vel_k2 = config::vel_ratio;
 

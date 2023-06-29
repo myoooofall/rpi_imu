@@ -35,7 +35,7 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
         std::cerr << "Error while setting up raw UART, do you have a uart?" << std::endl;
         std::terminate();
     }
-    if (uart->setBaudRate(9600) != mraa::SUCCESS) {
+    if (uart->setBaudRate(115200) != mraa::SUCCESS) {
         std::cerr << "Error setting parity on UART" << std::endl;
     }
 }
@@ -339,7 +339,7 @@ void devicez::write_uart(uint8_t* buff) {
 }
 
 void devicez::read_uart(uint8_t* buff) {
-    std::scoped_lock lock(mutex_uart);
+    // std::scoped_lock lock(mutex_uart);
     std::string buff_str = uart->readStr(UART_BUFF_SIZE);
     // std::cout << "read pack: " << buff_str << std::endl;
     if (buff != NULL) {
@@ -353,6 +353,7 @@ std::vector<int> devicez::read_nano_uart() {
     int infrare_flag;
     int cap_vol;
     int bat_vol_10x;
+    std::scoped_lock lock(mutex_uart);
     read_uart(nano_buff);
     if((nano_buff[0] & 0xfa) == 0xfa) {
         // infrare_flag = nano_buff[0] & 0x01;

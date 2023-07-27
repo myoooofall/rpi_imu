@@ -228,21 +228,25 @@ void robotz::_update_status(const double dt){
             }
             if(freq_temp == 6 && _s.team != 2) {
                 _s.team = 2;
+		save_freq(freq_temp);
                 gpio_devices.buzzer_set_freq_num();
             }else if(freq_temp == 8 && _s.team != 1) {
                 _s.team = 1;
+		save_freq(freq_temp);
                 gpio_devices.buzzer_set_freq_num();
             }
         }else if((nano_pack[0] & 0xfa) == 0xfa) {
             zos::log("nano pack 0: {:#}\n", nano_pack[0]);
-            if((nano_pack[0] & 0x01)){
+            if((nano_pack[0] & 0x01)) {
                 if(_s.robot_is_infrared > 0){
-                    _s.robot_is_infrared += dt;
+                    _s.robot_is_infrared = std::min(_s.robot_is_infrared+dt,10000.0);
                 }else{
                     _s.robot_is_infrared = 1;
                 }
                 zos::status("robot_is_infrared: {}ms\n", _s.robot_is_infrared);
-            }else{
+            }else if (_s.robot_is_infrared < 0) {
+                _s.robot_is_infrared = std::max(_s.robot_is_infrared-dt,-10000.0);
+            }else {
                 _s.robot_is_infrared = -1;
             }
             _s.cap_vol = nano_pack[1];
@@ -428,7 +432,7 @@ void robotz::_gpio_thread(std::stop_token _stop_token) {
         }
         // kick
         int kick_status = -1;
-        if (_s.robot_is_infrared>0 && _c.kick_en && _s.last_kick_time>800) {
+        if (_s.robot_is_infrared>0 && _c.kick_en && _s.last_kick_time>300) {
             zos::log("kick info   en:{}, mode:{}, time:{}   ir: {}, last_time: {}\n", _c.kick_en, _c.kick_mode, _c.kick_discharge_time, _s.robot_is_infrared, _s.last_kick_time);
             kick_status = gpio_devices.shoot_chip(_c.kick_mode, _c.kick_discharge_time);
             // TODO: _s.robot_is_shooted/chipped

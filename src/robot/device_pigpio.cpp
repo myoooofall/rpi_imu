@@ -29,13 +29,20 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     gpioSetMode(GPIO_BUZZER, PI_OUTPUT);
     buzzer_start();
 
+
+    uart1=new mraa::Uart ("/dev/ttyAMA0");
+    uart1->setBaudRate(921600);
+    uart1->setFlowcontrol(false, true);
+    uart1->setMode(8,mraa::UART_PARITY_NONE , 0);
+    uart1->setTimeout(10,10,10);
+
     try {
         uart = new mraa::Uart("/dev/ttyAMA1");
     } catch (std::exception& e) {
         std::cerr << "Error while setting up raw UART, do you have a uart?" << std::endl;
         std::terminate();
     }
-    if (uart->setBaudRate(115200) != mraa::SUCCESS) {
+    if (uart->setBaudRate(9600) != mraa::SUCCESS) {
         std::cerr << "Error setting parity on UART" << std::endl;
     }
 }
@@ -339,7 +346,7 @@ void devicez::write_uart(uint8_t* buff) {
 }
 
 void devicez::read_uart(uint8_t* buff) {
-    // std::scoped_lock lock(mutex_uart);
+    std::scoped_lock lock(mutex_uart);
     std::string buff_str = uart->readStr(UART_BUFF_SIZE);
     // std::cout << "read pack: " << buff_str << std::endl;
     if (buff != NULL) {
@@ -353,7 +360,6 @@ std::vector<int> devicez::read_nano_uart() {
     int infrare_flag;
     int cap_vol;
     int bat_vol_10x;
-    std::scoped_lock lock(mutex_uart);
     read_uart(nano_buff);
     if((nano_buff[0] & 0xfa) == 0xfa) {
         // infrare_flag = nano_buff[0] & 0x01;
@@ -376,3 +382,112 @@ std::vector<int> devicez::read_nano_uart() {
     // }
     return nano_pack;
 }
+
+int devicez::read_imu(mraa::Uart* uart) {
+    int length = read_imu_raw(uart);
+    std::vector<uint8_t> data(buffer, buffer + length);
+    
+    std::vector<uint8_t> pattern_acc = {0x55, 0x51};
+    std::vector<uint8_t> pattern_omega = {0x55, 0x52};
+    std::vector<uint8_t> pattern_theta = {0x55, 0x53};
+    {
+        std::vector<uint8_t>::iterator it = std::search(data.begin(), data.end(), pattern_acc.begin(), pattern_acc.end());
+        if (it != data.end()) {
+            size_t index = std::distance(data.begin(), it);
+            // ESP_LOGI("imu", "imu acc found at index %d", index);
+            // SUMCRC=0x55+TYPE+DATA1L+DATA1H+DATA2L+DATA2H+DATA3L+DATA3H+DATA4L+DATA4H
+            uint8_t crc_data[11];
+            std::copy(it, it+11, crc_data);
+            if(!sumcrc(crc_data)) {
+                 std::cout<<"imu theta crc error"<<std::endl;
+            } else {
+                // TODO: calculate acc
+                imu_status.acc_x = (short)(((short)data[index + 3] << 8) | data[index + 2]) / 32768.0 * 16 * 9.8;
+                imu_status.acc_y = (short)(((short)data[index + 5] << 8) | data[index + 4]) / 32768.0 * 16 * 9.8;
+                imu_status.acc_z = (short)(((short)data[index + 7] << 8) | data[index + 6]) / 32768.0 * 16 * 9.8;
+                imu_status.T_degree = (short)(((short)data[index + 9] << 8) | data[index + 8]) / 32768.0 * 96.38 + 36.53;
+                // ESP_LOGE("imu", "imu acc_x_raw: %d, %d, %d, %d", data[index+0], data[index + 1], data[index + 2], data[index + 3]);
+                // ESP_LOGI("imu", "imu acc: %f, %f, %f, %f", imu_status.acc_x, imu_status.acc_y, imu_status.acc_z, imu_status.T_degree);
+            }
+        } else {
+            std::cout<<"imu acc not found"<<std::endl;
+        }
+    }
+    {
+        std::vector<uint8_t>::iterator it = std::search(data.begin(), data.end(), pattern_omega.begin(), pattern_omega.end());
+        if (it != data.end()) {
+            size_t index = std::distance(data.begin(), it);
+            uint8_t crc_data[11];
+            std::copy(it, it+11, crc_data);
+            if(!sumcrc(crc_data)) {
+                std::cout<<"imu theta crc error"<<std::endl;
+            } else {
+                imu_status.omega_x = (short)(((short)data[index + 3] << 8) | data[index + 2]) / 32768.0 * 2000;
+                imu_status.omega_y = (short)(((short)data[index + 5] << 8) | data[index + 4]) / 32768.0 * 2000;
+                imu_status.omega_z = (short)(((short)data[index + 7] << 8) | data[index + 6]) / 32768.0 * 2000;
+                imu_status.voltage = (short)(((short)data[index + 9] << 8) | data[index + 8]) / 100.0;
+            }
+        } else {
+           std::cout<<"imu acc not found"<<std::endl;
+        }
+    }
+    {
+        std::vector<uint8_t>::iterator it = std::search(data.begin(), data.end(), pattern_theta.begin(), pattern_theta.end());
+        if (it != data.end()) {
+            size_t index = std::distance(data.begin(), it);
+            uint8_t crc_data[11];
+            std::copy(it, it+11, crc_data);
+            if(!sumcrc(crc_data)) {
+                std::cout<<"imu theta crc error"<<std::endl;
+            } else {
+                imu_status.theta_x = (short)(((short)data[index + 3] << 8) | data[index + 2]) / 32768.0 * 180;
+                imu_status.theta_y = (short)(((short)data[index + 5] << 8) | data[index + 4]) / 32768.0 * 180;
+                imu_status.theta_z = (short)(((short)data[index + 7] << 8) | data[index + 6]) / 32768.0 * 180;
+                imu_status.version = (short)(((short)data[index + 9] << 8) | data[index + 8]);
+            }
+        } else {
+            std::cout<<"imu acc not found"<<std::endl;
+        }
+    }
+    std::for_each(data.begin(), data.end(), [](uint8_t element) {
+  // 处理每个元素
+  zos::status("=-------------------imudata:{:#04x}\n",element);
+});
+
+    return length;
+}
+
+
+int devicez::read_imu_raw(mraa::Uart* uart1) {
+    
+    uart1->setBaudRate(961200);
+    
+    
+
+    std::string buff_str = uart1->readStr(IMU_DATA_LENGTH);
+    int length=buff_str.size();
+
+
+    if(length > IMU_DATA_LENGTH) length= IMU_DATA_LENGTH;
+
+    if(length==IMU_DATA_LENGTH){
+        std::cout<<"get status num: "<<IMU_DATA_LENGTH <<std::endl;
+    }
+    else if(length<IMU_DATA_LENGTH){
+        std::cout<<"get status num: "<<length<<std::endl;
+    }
+    std::copy(buff_str.begin(), buff_str.begin()+IMU_DATA_LENGTH, buffer);
+    
+    // printHex(buffer, length);
+    return length;
+}
+
+bool devicez::sumcrc(uint8_t* data) {
+            uint16_t sum = 0x0;
+            for (size_t i = 0; i < 10; i++) {
+                sum += data[i];  // 累加数据
+            }
+            uint8_t crc = sum & 0xFF;  // 取校验和的低8位
+            // ESP_LOGD("imu crc", "sumcrc: %d, real: %d", crc, data[10]);
+            return (crc == data[10]);
+        }

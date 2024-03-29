@@ -21,7 +21,7 @@
 #define GPIO_LED2           21
 
 #define UART_BUFF_SIZE 3
-
+#define IMU_DATA_LENGTH 256
 class devicez : public device{
 public:
     devicez(int num = MAX_MOTOR, uint8_t *i2c_addr_t = NULL);
@@ -53,6 +53,30 @@ public:
     // void motors_pid_write_single(int motor_id, char* pid_pack);
 
     // TODO: i2c-read-write any size devices/buffer
+
+    uint8_t buffer[IMU_DATA_LENGTH] = {0};
+
+    struct imu_data {
+        float acc_x;
+        float acc_y;
+        float acc_z;
+        float T_degree;
+        float omega_x;  // degree/s
+        float omega_y;
+        float omega_z;
+        float voltage;
+        float theta_x;
+        float theta_y;
+        float theta_z;
+        float version;
+    } imu_status;
+    mraa::Uart* uart1;
+
+    int read_imu_raw(mraa::Uart* uart);
+    int read_imu(mraa::Uart* uart);
+    bool sumcrc(uint8_t* data) ;
+    // void printHex(const uint8_t* data, size_t length);
+
 
 
     void inline static set_nrf2401_en(int mode=0) {

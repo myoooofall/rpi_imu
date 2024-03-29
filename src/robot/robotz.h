@@ -69,6 +69,8 @@ public:
         float kick_discharge_time = 0; // us
         float drib_power; // -1 ~ 1
 
+        float angle;
+
         // cmd_wheel
         std::array<float, 4> motor_vel_target = {0,0,0,0}; // rad/s
         // cmd_vel
@@ -109,6 +111,7 @@ public:
         
         float imu_theta; // suppose to be (-pi,pi]
         std::array<float, 6> imu_info; // TODO
+        std::array<float,12> imu_data;
 
         // uint8_t robot_status = 0, last_robot_status = 0;
     } robot_status;
@@ -131,6 +134,7 @@ public:
     // self test 
     void self_test();
 private:
+    void test_angle_control(int angle);
     void test_move(int Vx, int Vy, int Vr);
     void test_dribble(int d_power);
     void test_kick(int shoot_or_chip, int boot_power);

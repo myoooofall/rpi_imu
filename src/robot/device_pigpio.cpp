@@ -34,7 +34,7 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
     uart1->setBaudRate(921600);
     uart1->setFlowcontrol(false, true);
     uart1->setMode(8,mraa::UART_PARITY_NONE , 0);
-    uart1->setTimeout(10,10,10);
+    // uart1->setTimeout(10,10,10);
 
     try {
         uart = new mraa::Uart("/dev/ttyAMA1");
@@ -42,8 +42,11 @@ devicez::devicez(int num, uint8_t *i2c_addr_t) : i2c_th_single(num) {
         std::cerr << "Error while setting up raw UART, do you have a uart?" << std::endl;
         std::terminate();
     }
-    if (uart->setBaudRate(9600) != mraa::SUCCESS) {
+    if (uart->setBaudRate(115200) != mraa::SUCCESS) {
         std::cerr << "Error setting parity on UART" << std::endl;
+    uart->setFlowcontrol(false, true);
+    uart->setMode(8,mraa::UART_PARITY_NONE , 0);
+    // uart->setTimeout(10,10,10);
     }
 }
 
@@ -377,9 +380,9 @@ std::vector<int> devicez::read_nano_uart() {
         nano_pack[1] = nano_buff[1];
         nano_pack[2] = nano_buff[2];
     }
-    // else {
-    //     zos::log("wrong pack: {:#04x}\n", nano_buff[0]);
-    // }
+    else {
+        zos::status("wrong pack: {:#04x}\n", nano_buff[0]);
+    }
     return nano_pack;
 }
 
@@ -449,21 +452,17 @@ int devicez::read_imu(mraa::Uart* uart) {
             std::cout<<"imu acc not found"<<std::endl;
         }
     }
-    std::for_each(data.begin(), data.end(), [](uint8_t element) {
+    //std::for_each(data.begin(), data.end(), [](uint8_t element) {
   // 处理每个元素
-  zos::status("=-------------------imudata:{:#04x}\n",element);
-});
+//   zos::status("=-------------------imudata:{:#04x}\n",element);
+//});
 
     return length;
 }
 
 
 int devicez::read_imu_raw(mraa::Uart* uart1) {
-    
-    uart1->setBaudRate(961200);
-    
-    
-
+    std::scoped_lock lock(mutex_uart);
     std::string buff_str = uart1->readStr(IMU_DATA_LENGTH);
     int length=buff_str.size();
 
@@ -491,3 +490,17 @@ bool devicez::sumcrc(uint8_t* data) {
             // ESP_LOGD("imu crc", "sumcrc: %d, real: %d", crc, data[10]);
             return (crc == data[10]);
         }
+
+std::vector<int> devicez::read_uart_wl() {
+    std::string buff_str = uart->readStr(UART_BUFF_SIZE);
+    int length=buff_str.size();
+    std::cout<<"get nano status num: "<< length<<std::endl;
+    std::copy(buff_str.begin(), buff_str.begin()+UART_BUFF_SIZE, buffer_nano);
+
+     std::vector<int> nano_pack(3, 0);
+     nano_pack[0]=buffer_nano[0];
+     nano_pack[1]=buffer_nano[1];
+     nano_pack[2]=buffer_nano[2];
+
+    return nano_pack;
+}

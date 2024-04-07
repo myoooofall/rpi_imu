@@ -55,6 +55,7 @@ public:
     // TODO: i2c-read-write any size devices/buffer
 
     uint8_t buffer[IMU_DATA_LENGTH] = {0};
+    uint8_t buffer_nano[UART_BUFF_SIZE] = {0};
 
     struct imu_data {
         float acc_x;
@@ -71,6 +72,7 @@ public:
         float version;
     } imu_status;
     mraa::Uart* uart1;
+   std::vector<int> read_uart_wl();
 
     int read_imu_raw(mraa::Uart* uart);
     int read_imu(mraa::Uart* uart);

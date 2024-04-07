@@ -10,8 +10,8 @@
     // 缓冲区用于存储读取的数据
     //uint8_t*buffer;
 uint8_t buffer[IMU_DATA_LENGTH] = {0};
-int read_imu_raw();
-int read_imu();
+int read_imu_raw(mraa::Uart* uart);
+int read_imu(mraa::Uart* uart);
 bool sumcrc(uint8_t* data) ;
 struct imu_data {
         float acc_x;
@@ -35,35 +35,48 @@ void printHex(const uint8_t* data, size_t length) {
 }
 int main() {
     // 初始化串口
-  
+    mraa::Uart *uart1=new mraa::Uart ("/dev/ttyAMA1");
+    uart1->setBaudRate(115200);
+    uart1->setFlowcontrol(false, true);
+    uart1->setMode(8,mraa::UART_PARITY_NONE , 0);
+    uart1->setTimeout(10,10,10);
+
+    mraa::Uart *uart=new mraa::Uart ("/dev/ttyAMA0");
+    uart->setBaudRate(921600);
+    uart->setFlowcontrol(false, true);
+    uart->setMode(8,mraa::UART_PARITY_NONE , 0);
+    uart->setTimeout(10,10,10);
     // 缓冲区用于存储读取的数据
     
 
     while (true) {
         // 从串口读取数据
-       read_imu();
-       std::cout<<imu_status.acc_x<<std::endl;
-       std::cout<<imu_status.acc_y<<std::endl;
-       std::cout<<imu_status.acc_z<<std::endl;
-       std::cout<<imu_status.omega_x<<std::endl;
-       std::cout<<imu_status.omega_y<<std::endl;
-       std::cout<<imu_status.omega_z<<std::endl;
-       std::cout<<imu_status.theta_x<<std::endl;
-       std::cout<<imu_status.theta_y<<std::endl;
-       std::cout<<imu_status.theta_z<<std::endl;
-       std::cout<<imu_status.T_degree<<std::endl;
-       std::cout<<imu_status.voltage<<std::endl;
-        std::cout<<imu_status.version<<std::endl;
+       
+       read_imu(uart);
+       
+    //    std::cout<<imu_status.acc_x<<std::endl;
+    //    std::cout<<imu_status.acc_y<<std::endl;
+    //    std::cout<<imu_status.acc_z<<std::endl;
+    //    std::cout<<imu_status.omega_x<<std::endl;
+    //    std::cout<<imu_status.omega_y<<std::endl;
+    //    std::cout<<imu_status.omega_z<<std::endl;
+    //    std::cout<<imu_status.theta_x<<std::endl;
+    //    std::cout<<imu_status.theta_y<<std::endl;
+    //    std::cout<<imu_status.theta_z<<std::endl;
+    //    std::cout<<imu_status.T_degree<<std::endl;
+    //    std::cout<<imu_status.voltage<<std::endl;
+    //     std::cout<<imu_status.version<<std::endl;
 
         std::cout<<"-------------------------------------"<<std::endl;
+        read_imu_raw(uart1);
     }
 
     return 0;
 }
 
 
-int read_imu() {
-    int length = read_imu_raw();
+int read_imu(mraa::Uart* uart) {
+    int length = read_imu_raw(uart);
     std::vector<uint8_t> data(buffer, buffer + length);
     
     std::vector<uint8_t> pattern_acc = {0x55, 0x51};
@@ -131,9 +144,8 @@ int read_imu() {
     return length;
 }
 
-int read_imu_raw() {
-    mraa::Uart *uart=new mraa::Uart ("/dev/ttyAMA1");
-    uart->setBaudRate(115200);
+int read_imu_raw(mraa::Uart* uart) {
+    
     
     
 

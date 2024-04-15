@@ -18,9 +18,21 @@ cmake .. -D RF24_DRIVER=pigpio
 ```
 imu-setup-process
 
-1.sudo raspi-config #ban console and open serial
+1.sudo raspi-config  choose-interware configuation choose-serial #ban console and open serial
 2.sudo nano /boot/firmware/config.txt 
-add "dtoverlty=bluetooth-bt"
+add "dtoverlty=disable-bt"
 3.systemctl disable bluetooth #ban the bluetooth service 
 4.sudo reboot 
-5.change the src code and make a new one 
+the procedure above is aimed to configure raspi. after configuration we change the code
+5.cd rpi-embedded 
+cd src
+cd share
+cd proto
+change the proto : exactly the zss_cmd.proto 
+compile the files of proto:protoc --cpp_out=. zss_cmd.proto 
+6.change the src code  mainly four file: device_pigpio.h device_pigpio.cpp robotz.cpp robotz.h
+then make the bin file
+cd build
+cmake ..
+make
+7.sudo reboot  

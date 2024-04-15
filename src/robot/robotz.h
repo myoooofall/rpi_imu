@@ -69,8 +69,6 @@ public:
         float kick_discharge_time = 0; // us
         float drib_power; // -1 ~ 1
 
-        float angle;
-
         // cmd_wheel
         std::array<float, 4> motor_vel_target = {0,0,0,0}; // rad/s
         // cmd_vel
@@ -86,6 +84,11 @@ public:
         uint16_t acc_r_set = 60;
         
         uint8_t DEC_FRAME = 0;
+        std::array<float, 4> pid_kp = {0,0,0,0};
+        std::array<float, 4> pid_ki = {0,0,0,0};
+        std::array<float, 4> pid_kd = {0,0,0,0};
+        bool imu_is_used = 0 ;
+
         // store origin pb cmd
     } robot_cmd;
     ZSS::New::Robot_Command pb_cmd;
@@ -124,6 +127,8 @@ public:
 
     // uint8_t RX_Packet[25];
     void set_pid();
+    void set_pid_time();
+    void set_pid_time1();
 
     void run_per_13ms(std::stop_token);
     bool get_new_pack();
@@ -134,7 +139,6 @@ public:
     // self test 
     void self_test();
 private:
-    void test_angle_control(int angle);
     void test_move(int Vx, int Vy, int Vr);
     void test_dribble(int d_power);
     void test_kick(int shoot_or_chip, int boot_power);
@@ -187,6 +191,7 @@ private:
     void save_pid();
     void save_id(int robot_id_new);
     void save_freq(int nrf2401_freq_new);
+    
 
 };
 

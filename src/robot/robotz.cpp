@@ -15,10 +15,6 @@ robotz::robotz(int _comm_type,int motor_num)
     }else {
         zos::log("{} motor detected!\n", motors_num);
     }
-    int length111=gpio_devices.read_imu(gpio_devices.uart1);
-    // int length112=gpio_devices.read_imu(gpio_devices.uart1);
-    // int length113=gpio_devices.read_imu(gpio_devices.uart1);
-    zos::status("i----------------mu_data num: {}-----------------\n", length111);
     read_config_yaml();
     nrf2401.set_freq(nrf2401_freq);
     set_pid();
@@ -35,6 +31,7 @@ robotz::robotz(int _comm_type,int motor_num)
         _jthread4multicast = std::jthread(std::bind(&robotz::_multicast_info_thread,this,std::placeholders::_1));
         _jthread4sendback = std::jthread(std::bind(&robotz::_send_status_thread,this,std::placeholders::_1));
     }
+    _jthread4gpio = std::jthread(std::bind(&robotz::_gpio_thread,this,std::placeholders::_1));
 }
 
 //解包，到每个轮子的速度
@@ -217,7 +214,6 @@ void robotz::_cmd_cb(const zos::Data& data){
 }
 void robotz::_update_status(const double dt){
     std::vector<int> nano_pack = gpio_devices.read_nano_uart();
-    //std::vector<int> nano_pack = gpio_devices.read_uart_wl();
     {
         std::scoped_lock lock{_robot_status_mutex};
         auto& _s = robot_status;
@@ -230,30 +226,42 @@ void robotz::_update_status(const double dt){
                 gpio_devices.buzzer_set_freq_num();
                 zos::warning("change num: {}\n", id_temp);
             }
-            if(freq_temp == 6) {
+            if(freq_temp == 6 && _s.team != 2) {
                 _s.team = 2;
-            }else if(freq_temp == 8) {
+		save_freq(freq_temp);
+                gpio_devices.buzzer_set_freq_num();
+            }else if(freq_temp == 8 && _s.team != 1) {
                 _s.team = 1;
+		save_freq(freq_temp);
+                gpio_devices.buzzer_set_freq_num();
             }
         }else if((nano_pack[0] & 0xfa) == 0xfa) {
-            if((nano_pack[0] & 0x01)){
+            zos::log("nano pack 0: {:#}\n", nano_pack[0]);
+            if((nano_pack[0] & 0x01)) {
                 if(_s.robot_is_infrared > 0){
-                    _s.robot_is_infrared += dt;
+                    _s.robot_is_infrared = std::min(_s.robot_is_infrared+dt,10000.0);
                 }else{
                     _s.robot_is_infrared = 1;
                 }
                 zos::status("robot_is_infrared: {}ms\n", _s.robot_is_infrared);
-            }else{
+            }else if (_s.robot_is_infrared < 0) {
+                _s.robot_is_infrared = std::max(_s.robot_is_infrared-dt,-10000.0);
+            }else {
                 _s.robot_is_infrared = -1;
             }
             _s.cap_vol = nano_pack[1];
             _s.bat_vol = nano_pack[2]/10.0;
             zos::status("infrare: {}, cap_vol : {}, bat_vol: {}\n", _s.robot_is_infrared, _s.cap_vol, _s.bat_vol);
-            
         }
-        zos::status("=-------------------328p_data:{:#04x}----------\n",nano_pack[0]);
-        zos::status("=-------------------328p_data:{:#04x}----------\n",nano_pack[1]);
-        zos::status("=-------------------328p_data:{:#04x}----------\n",nano_pack[2]);
+        // nano uart and kick status will update in gpio thread
+        // if(_infrared) {
+        //     _s.robot_is_infrared += dt;
+        // }else{
+        //     _s.robot_is_infrared = -1;
+        // }
+        // _s.bat_vol = _bat_vol;
+        // _s.cap_vol = _cap_vol;
+
         // motors will be updated in control thread;
         for(int i=0;i<MAX_MOTOR;i++){
             _s.motor_encoder[i] = vel_read_temp[i];
@@ -263,21 +271,6 @@ void robotz::_update_status(const double dt){
         _s.last_kick_time = std::min(_s.last_kick_time+dt,10000.0);
         _s.robot_is_shooted = std::min(_s.robot_is_shooted+dt,10000.0);
         _s.robot_is_chipped = std::min(_s.robot_is_chipped+dt,10000.0);
-
-        int length=gpio_devices.read_imu(gpio_devices.uart1);
-        zos::status("i----------------mu_data num: {}-----------------\n", length);
-        _s.imu_data[0]= gpio_devices.imu_status.acc_x;
-        _s.imu_data[1]= gpio_devices.imu_status.acc_y;
-        _s.imu_data[2]= gpio_devices.imu_status.acc_z;
-        _s.imu_data[3]= gpio_devices.imu_status.T_degree;
-        _s.imu_data[4]= gpio_devices.imu_status.omega_x;
-        _s.imu_data[5]= gpio_devices.imu_status.omega_y;
-        _s.imu_data[6]= gpio_devices.imu_status.omega_z;
-        _s.imu_data[7]= gpio_devices.imu_status.voltage;
-        _s.imu_data[8]= gpio_devices.imu_status.theta_x;
-        _s.imu_data[9]= gpio_devices.imu_status.theta_y;
-        _s.imu_data[10]= gpio_devices.imu_status.theta_z;
-        _s.imu_data[11]= gpio_devices.imu_status.version;
     }
 }
 void robotz::_send_status_thread(std::stop_token _stop_token){
@@ -302,7 +295,7 @@ void robotz::_send_status_thread(std::stop_token _stop_token){
             pb_status.set_robot_id(_s.id);
             pb_status.set_infrared(_s.robot_is_infrared);
             // zos::status("id: {}, team: {}\n", _s.id, _s.team);
-            // zos::status("send infrare status: {}\n", _s.robot_is_infrared);
+            zos::status("send infrare status: {}\n", _s.robot_is_infrared);
             pb_status.set_flat_kick(_s.robot_is_shooted);
             pb_status.set_chip_kick(_s.robot_is_chipped);
             pb_status.set_battery(_s.bat_vol);
@@ -312,18 +305,6 @@ void robotz::_send_status_thread(std::stop_token _stop_token){
             pb_status.add_wheel_encoder(_s.motor_encoder[2]);
             pb_status.add_wheel_encoder(_s.motor_encoder[3]);
             pb_status.set_team(ZSS::New::Team(_s.team));
-            pb_status.add_imu_data(_s.imu_data[0]);
-            pb_status.add_imu_data(_s.imu_data[1]);
-            pb_status.add_imu_data(_s.imu_data[2]);
-            pb_status.add_imu_data(_s.imu_data[3]);
-            pb_status.add_imu_data(_s.imu_data[4]);
-            pb_status.add_imu_data(_s.imu_data[5]);
-            pb_status.add_imu_data(_s.imu_data[6]);
-            pb_status.add_imu_data(_s.imu_data[7]);
-            pb_status.add_imu_data(_s.imu_data[8]);
-            pb_status.add_imu_data(_s.imu_data[9]);
-            pb_status.add_imu_data(_s.imu_data[10]);
-            pb_status.add_imu_data(_s.imu_data[11]); 
         }
         auto size = pb_status.ByteSizeLong();
         data.resize(size);
@@ -395,33 +376,86 @@ void robotz::_control_thread(std::stop_token _stop_token){
             }
             last_time = now_time;
         }
-        zos::info("motor set : {},{},{},{}\n",vel_pack[0],vel_pack[1],vel_pack[2],vel_pack[3]);
+        // zos::info("motor set : {},{},{},{}\n",vel_pack[0],vel_pack[1],vel_pack[2],vel_pack[3]);
         gpio_devices.set_motors_vel(vel_pack);
         // TODO: dribble
         gpio_devices.dribbler((int)abs(_c.drib_power) | 0x0c);
-        // kick
-        zos::log("kick info   en:{}, mode:{}, time:{}\n", _c.kick_en, _c.kick_mode, _c.kick_discharge_time);
-        if (_c.kick_en && _s.robot_is_infrared && _s.last_kick_time>80000) {
-            int kick_status = gpio_devices.shoot_chip(_c.kick_mode, _c.kick_discharge_time);
-            _s.last_kick_time = 0;
-            _c.kick_discharge_time = 0;
-            // TODO: _s.robot_is_shooted/chipped
-            switch(kick_status) {
-                case SHOOT_MODE:
-                    zos::log("--kick status: shoot!\n");
-                    _s.robot_is_shooted = 0;
-                    break;
-                case CHIP_MODE:
-                    zos::log("--kick status: chip!\n");
-                    _s.robot_is_chipped = 0;
-                    break;
-            }
-        }
 
         auto temp_read = gpio_devices.get_motors_vel();
         for(int i=0;i<MAX_MOTOR;i++){
             vel_read_temp[i] = temp_read[i];
         }
+        robot_rate.sleep();
+    }
+}
+
+void robotz::_gpio_thread(std::stop_token _stop_token) {
+    zos::Rate robot_rate(config::robot_freq);
+    while(true){
+        // nano
+        // std::vector<int> nano_pack = gpio_devices.read_nano_uart();
+        // int freq_temp = -1;
+        // int id_temp = -1;
+        // if (nano_pack[0] == 0xaa) {
+        //     freq_temp = nano_pack[1];
+        //     id_temp = nano_pack[2];
+        //     if (id_temp != _s.id) {
+        //         _s.id = id_temp;
+        //         save_id(id_temp);
+        //         gpio_devices.buzzer_set_freq_num();
+        //         zos::warning("change num: {}\n", id_temp);
+        //     }
+        //     if(freq_temp == 6 && _s.team != 2) {
+        //         _s.team = 2;
+        //         gpio_devices.buzzer_set_freq_num();
+        //     }else if(freq_temp == 8 && _s.team != 1) {
+        //         _s.team = 1;
+        //         gpio_devices.buzzer_set_freq_num();
+        //     }
+        // }else if((nano_pack[0] & 0xfa) == 0xfa) {
+        //     _infrared = nano_pack[0] & 0x01;
+        //     // zos::status("robot_is_infrared: {}ms\n", _s.robot_is_infrared);
+        //     _cap_vol = nano_pack[1];
+        //     _bat_vol = nano_pack[2] / 10.0;
+        //     zos::status("infrare: {}, cap_vol : {}, bat_vol: {}\n", _infrared, _cap_vol, _bat_vol);
+        // }
+        
+        Robot_CMD _c;
+        Robot_STATUS _s;
+        {
+            std::scoped_lock lock{_robot_cmd_mutex};
+            _c = robot_cmd;
+        }
+        {
+            std::scoped_lock lock{_robot_status_mutex};
+            _s = robot_status;
+        }
+        // kick
+        int kick_status = -1;
+        if (_s.robot_is_infrared>0 && _c.kick_en && _s.last_kick_time>300) {
+            zos::log("kick info   en:{}, mode:{}, time:{}   ir: {}, last_time: {}\n", _c.kick_en, _c.kick_mode, _c.kick_discharge_time, _s.robot_is_infrared, _s.last_kick_time);
+            kick_status = gpio_devices.shoot_chip(_c.kick_mode, _c.kick_discharge_time);
+            // TODO: _s.robot_is_shooted/chipped
+            {
+                std::scoped_lock lock{_robot_status_mutex,_robot_cmd_mutex};
+                auto& _status = robot_status;
+                switch(kick_status) {
+                    case SHOOT_MODE:
+                        zos::log("--kick status: shoot!\n");
+                        _status.robot_is_shooted = 0;
+                        break;
+                    case CHIP_MODE:
+                        zos::log("--kick status: chip!\n");
+                        _status.robot_is_chipped = 0;
+                        break;
+                }
+                robot_status.last_kick_time = 0;
+                robot_cmd.kick_en = false;
+                robot_cmd.kick_discharge_time = 0;
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(10000));
+        }
+        // std::this_thread::sleep_for(std::chrono::microseconds(1000));
         robot_rate.sleep();
     }
 }
@@ -514,7 +548,7 @@ void robotz::pack(std::vector<uint8_t> &TX_Packet) {
     }
     TX_Packet[4] = (uint8_t)bat_vol_temp;
     TX_Packet[5] = (uint8_t)cap_vol_temp;
-    zos::status("pack voltage info     bat: {}   cap: {}\n", TX_Packet[4], TX_Packet[5]);
+    // zos::status("pack voltage info     bat: {}   cap: {}\n", TX_Packet[4], TX_Packet[5]);
 
     // TODO: define IMU
     #ifdef IMU_TEST_1
@@ -583,7 +617,6 @@ void robotz::run_per_13ms(std::stop_token _stop_token) {
 
         //infrare
         std::vector<int> nano_pack = gpio_devices.read_nano_uart();
-        
         if (nano_pack[0] == 0xaa) {
             int freq_temp = nano_pack[1];
             int id_temp = nano_pack[2];
@@ -609,16 +642,19 @@ void robotz::run_per_13ms(std::stop_token _stop_token) {
                 robot_status.robot_is_infrared = 0;
                 Robot_Status = Robot_Status & 0x30;
             }
-            robot_status.cap_vol = nano_pack[1] & 0x01;
+            robot_status.cap_vol = nano_pack[1];
             robot_status.bat_vol = nano_pack[2]/10.0;
             if(status_count++ > 100) {
                 zos::status("infrare: {},   cap_vol: {:.1f}V,   bat_vol: {:.1f}V\n", robot_status.robot_is_infrared, robot_status.cap_vol, robot_status.bat_vol);
                 status_count = 0;
             }
         }
-
-        if(chipshoot_timerdelay_flag < 127)
-            chipshoot_timerdelay_flag++;
+        {
+            std::scoped_lock lock{_robot_status_mutex};
+            if(robot_status.last_kick_time < 10000) {
+                robot_status.last_kick_time += 1000*1/config::robot_freq;
+            }
+        }
 
         // shoot and chip
         // TODO: Shoot and chip-need to determine time flag
@@ -652,30 +688,18 @@ bool robotz::get_new_pack() {
         }else {
             Robot_Status &= 0xCF;
         }
-        // std::scoped_lock lock{_cmd_data_mutex};
-        if (robot_cmd.kick_discharge_time && robot_status.robot_is_infrared && chipshoot_timerdelay_flag>80) {
-            int kick_status = gpio_devices.shoot_chip(robot_cmd.kick_mode, robot_cmd.kick_discharge_time);
-            Kick_Count = 9;
-            // TODO: robot_status.robot_is_shooted/chipped
-            switch(kick_status) {
-                case SHOOT_MODE:
-                    Robot_Status = Robot_Status | (1 << 5);
-                    zos::log("shoot!--status: {:#}\n", Robot_Status);
-                    chipshoot_timerdelay_flag = 0;
-                    break;
-                case CHIP_MODE:
-                    Robot_Status = Robot_Status | (1 << 4);
-                    zos::log("chip!--status: {:#}\n", Robot_Status);
-                    chipshoot_timerdelay_flag = 0;
-                    break;
+        {
+            std::scoped_lock lock{_robot_status_mutex, _cmd_data_mutex};
+            if(robot_cmd.kick_discharge_time>0) {
+                robot_cmd.kick_en = true;
+                Kick_Count = 9;
             }
+            if ((Robot_Status != Last_Robot_Status) || (robot_status.robot_is_infrared) || (robot_cmd.need_report == 1)) {
+                Left_Report_Package = 6;
+                Last_Robot_Status = Robot_Status;
+            }
+            // zos::status("pack infrare before kick: {}\n", (Robot_Status >> 6));
         }
-
-        if ((Robot_Status != Last_Robot_Status) || (robot_status.robot_is_infrared) || (robot_cmd.need_report == 1)) {
-            Left_Report_Package = 6;
-            Last_Robot_Status = Robot_Status;
-        }
-        // zos::status("pack infrare before kick: {}\n", (Robot_Status >> 6));
 
         if(Left_Report_Package > 0 || Kick_Count > 0) {
             pack(TX_Packet);
@@ -688,7 +712,10 @@ bool robotz::get_new_pack() {
             // #else
             // wifiz.udp_sender(TX_Packet.data(),TX_Packet.size());
             // #endif
-            robot_status.transmitted_pack_count++;
+            {
+                std::scoped_lock lock{_robot_status_mutex};
+                robot_status.transmitted_pack_count++;
+            }
         }
 
         if(Left_Report_Package > 0)   Left_Report_Package --;

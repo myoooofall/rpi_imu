@@ -18,6 +18,7 @@ robotz::robotz(int _comm_type,int motor_num)
     read_config_yaml();
     nrf2401.set_freq(nrf2401_freq);
     set_pid();
+    
     // bangbang.control_init();
     // #ifdef OLD_VERSION
     // comm.start();
@@ -210,6 +211,19 @@ void robotz::_cmd_cb(const zos::Data& data){
                 break;
             }
         }
+        // pid_pack[0]=_p.kp(0);
+        // pid_pack[1]=_p.ki(0);
+        // pid_pack[2]=_p.kp(1);
+        // pid_pack[3]=_p.ki(1);
+        // pid_pack[4]=_p.kp(2);
+        // pid_pack[5]=_p.ki(2);
+        // pid_pack[6]=_p.kp(3);
+        // pid_pack[7]=_p.ki(3);
+        // for(int i=0;i<8;i++){
+        //     zos::status("------------{}------------\n",pid_pack[i]);
+        // }
+        // _c.imu_is_used = _p.use_pid();
+        
     }
 }
 void robotz::_update_status(const double dt){
@@ -236,7 +250,7 @@ void robotz::_update_status(const double dt){
                 gpio_devices.buzzer_set_freq_num();
             }
         }else if((nano_pack[0] & 0xfa) == 0xfa) {
-            zos::log("nano pack 0: {:#}\n", nano_pack[0]);
+            zos::status("nano pack 0: {:#}\n", nano_pack[0]);
             if((nano_pack[0] & 0x01)) {
                 if(_s.robot_is_infrared > 0){
                     _s.robot_is_infrared = std::min(_s.robot_is_infrared+dt,10000.0);
@@ -271,6 +285,21 @@ void robotz::_update_status(const double dt){
         _s.last_kick_time = std::min(_s.last_kick_time+dt,10000.0);
         _s.robot_is_shooted = std::min(_s.robot_is_shooted+dt,10000.0);
         _s.robot_is_chipped = std::min(_s.robot_is_chipped+dt,10000.0);
+        
+        int length=gpio_devices.read_imu(gpio_devices.uart1);
+        zos::status("i----------------mu_data num: {}-----------------\n", length);
+        _s.imu_data[0]= gpio_devices.imu_status.acc_x;
+        _s.imu_data[1]= gpio_devices.imu_status.acc_y;
+        _s.imu_data[2]= gpio_devices.imu_status.acc_z;
+        _s.imu_data[3]= gpio_devices.imu_status.T_degree;
+        _s.imu_data[4]= gpio_devices.imu_status.omega_x;
+        _s.imu_data[5]= gpio_devices.imu_status.omega_y;
+        _s.imu_data[6]= gpio_devices.imu_status.omega_z;
+        _s.imu_data[7]= gpio_devices.imu_status.voltage;
+        _s.imu_data[8]= gpio_devices.imu_status.theta_x;
+        _s.imu_data[9]= gpio_devices.imu_status.theta_y;
+        _s.imu_data[10]= gpio_devices.imu_status.theta_z;
+        _s.imu_data[11]= gpio_devices.imu_status.version;
     }
 }
 void robotz::_send_status_thread(std::stop_token _stop_token){
@@ -305,6 +334,18 @@ void robotz::_send_status_thread(std::stop_token _stop_token){
             pb_status.add_wheel_encoder(_s.motor_encoder[2]);
             pb_status.add_wheel_encoder(_s.motor_encoder[3]);
             pb_status.set_team(ZSS::New::Team(_s.team));
+            pb_status.add_imu_data(_s.imu_data[0]);
+            pb_status.add_imu_data(_s.imu_data[1]);
+            pb_status.add_imu_data(_s.imu_data[2]);
+            pb_status.add_imu_data(_s.imu_data[3]);
+            pb_status.add_imu_data(_s.imu_data[4]);
+            pb_status.add_imu_data(_s.imu_data[5]);
+            pb_status.add_imu_data(_s.imu_data[6]);
+            pb_status.add_imu_data(_s.imu_data[7]);
+            pb_status.add_imu_data(_s.imu_data[8]);
+            pb_status.add_imu_data(_s.imu_data[9]);
+            pb_status.add_imu_data(_s.imu_data[10]);
+            pb_status.add_imu_data(_s.imu_data[11]); 
         }
         auto size = pb_status.ByteSizeLong();
         data.resize(size);
@@ -380,6 +421,7 @@ void robotz::_control_thread(std::stop_token _stop_token){
         gpio_devices.set_motors_vel(vel_pack);
         // TODO: dribble
         gpio_devices.dribbler((int)abs(_c.drib_power) | 0x0c);
+        
 
         auto temp_read = gpio_devices.get_motors_vel();
         for(int i=0;i<MAX_MOTOR;i++){
@@ -868,4 +910,37 @@ void robotz::set_pid() {
     std::fill_n(begin(pid_pack), 8, 0);
     pid_busy = false;
     std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+void robotz::set_pid_time(){
+
+    auto& _c = robot_cmd;
+    if(_c.imu_is_used){
+        pid_busy = true;
+        gpio_devices.set_motors_pid(pid_pack);
+        pid_real = gpio_devices.get_motors_pid();
+        
+        save_pid();
+        std::fill_n(begin(pid_pack), 8, 0);
+        _c.imu_is_used = 0;
+        pid_busy = false;
+        zos::status("receive pid parameters \n");
+
+    }
+    else{
+        zos::status("cannot receive pid parameters \n");
+    }
+}
+
+void robotz::set_pid_time1(){
+        pid_busy = true;
+        gpio_devices.set_motors_pid(pid_pack);
+        pid_real = gpio_devices.get_motors_pid();
+        for(int i=0;i<8;i++){
+            zos::status("pid{}: {:#04x}\n",i, pid_real[i]);
+        }
+        save_pid();
+        std::fill_n(begin(pid_pack), 8, 0);
+        pid_busy = false;
+    
 }

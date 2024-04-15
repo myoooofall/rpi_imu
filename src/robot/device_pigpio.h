@@ -40,23 +40,9 @@ public:
     void led_flash(int led_id, int level);
     // void led_flash() {led_flash(0,1);};
     // TODO: led toggle
+    uint8_t buffer[IMU_DATA_LENGTH] = {0};
 
     std::vector<int> read_nano_uart();
-
-    // std::vector<int> get_encoder();
-    // std::array<float, MAX_MOTOR> get_encoder_array();
-    std::array<float, MAX_MOTOR> get_motors_vel();
-    void set_motors_vel(std::vector<int>& vel_pack);
-
-    std::vector<int> get_motors_pid();
-    void set_motors_pid(std::vector<int>& pid_pack);
-    // void motors_pid_write_single(int motor_id, char* pid_pack);
-
-    // TODO: i2c-read-write any size devices/buffer
-
-    uint8_t buffer[IMU_DATA_LENGTH] = {0};
-    uint8_t buffer_nano[UART_BUFF_SIZE] = {0};
-
     struct imu_data {
         float acc_x;
         float acc_y;
@@ -72,13 +58,22 @@ public:
         float version;
     } imu_status;
     mraa::Uart* uart1;
-   std::vector<int> read_uart_wl();
+   
 
     int read_imu_raw(mraa::Uart* uart);
     int read_imu(mraa::Uart* uart);
     bool sumcrc(uint8_t* data) ;
-    // void printHex(const uint8_t* data, size_t length);
 
+    // std::vector<int> get_encoder();
+    // std::array<float, MAX_MOTOR> get_encoder_array();
+    std::array<float, MAX_MOTOR> get_motors_vel();
+    void set_motors_vel(std::vector<int>& vel_pack);
+
+    std::vector<int> get_motors_pid();
+    void set_motors_pid(std::vector<int>& pid_pack);
+    // void motors_pid_write_single(int motor_id, char* pid_pack);
+
+    // TODO: i2c-read-write any size devices/buffer
 
 
     void inline static set_nrf2401_en(int mode=0) {

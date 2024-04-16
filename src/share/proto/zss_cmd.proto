@@ -42,6 +42,8 @@ message Robot_Status {
     repeated float wheel_encoder = 9;
     // team
     Team team = 10;
+    //imu_data 12组数据
+    repeated float imu_data = 11;
 }
 
 message Robots_Command {
@@ -87,4 +89,5 @@ message Robot_Command {
         UDP_WIFI = 3;
     }
     CommType comm_type = 12;
+    float angle = 13;
 }

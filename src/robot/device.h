@@ -26,6 +26,8 @@ public:
     virtual void infrare_detect() = 0;
     virtual void dribbler(int dribble_val) = 0;
 
+    virtual void angel_controler(int angle) = 0;
+
     virtual void buzzer_once(int freq) = 0;
     
     void output_test() {

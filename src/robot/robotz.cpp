@@ -399,6 +399,7 @@ void robotz::_control_thread(std::stop_token _stop_token){
         }
         {   
             now_time = std::chrono::steady_clock::now();
+            
             switch(_c.cmd_type){
                 case CMD_TYPE_NONE:{
                     break;
@@ -520,8 +521,17 @@ void robotz::motion_planner(const double _dt) { // dt in us
 
     robot_cmd.vx_target_last = vx;
     robot_cmd.vy_target_last = vy;
+
+    double vr= get_vr(_dt);
+    double acc_r = (vr - robot_cmd.vr_target_last)/(_dt/1000000);
+    // if(acc_vr > robot_cmd.acc_r_set){
+    //     acc_vr = robot_cmd.acc_r_set;
+    // }
+    vr = robot_cmd.vr_target_last + acc_r*_dt/1000000.0;
+    robot_cmd.vr_target_last = vr ;
+
     for(int i=0; i < 4; i++) {
-        vel_pack[i] = ((sin_angle[i]) * vx + (cos_angle[i]) * vy - 8.2 * robot_cmd.vr_target/160) * Vel_k2 * 100; // TODO: *100
+        vel_pack[i] = ((sin_angle[i]) * vx + (cos_angle[i]) * vy - 8.2 * vr/160) * Vel_k2 * 100; // TODO: *100
         vel_pack[i] = (vel_pack[i] >  8000) ?  8000 : vel_pack[i];
         vel_pack[i] = (vel_pack[i] < -8000) ? -8000 : vel_pack[i];
     }
@@ -943,4 +953,18 @@ void robotz::set_pid_time1(){
         std::fill_n(begin(pid_pack), 8, 0);
         pid_busy = false;
     
+}
+double robotz::get_vr(const double _dt){
+    std::scoped_lock lock{_robot_cmd_mutex};
+    
+    if(!robot_cmd.use_dir) return robot_cmd.vr_target;
+    float current_angle= gpio_devices.imu_status.theta_z;
+    float target_angle= robot_cmd.vr_target;
+    error = target_angle - current_angle;
+    float derivative = (error - prev_error) /_dt;
+    prev_error = error ;
+    double output_vr = angle_p * error + angle_d* derivative;
+    zos::status("output_vr: {} error: {} target_theta: {} current angle: {}\n",output_vr,error,target_angle,current_angle);
+    return output_vr;
+
 }

@@ -1,0 +1,10 @@
+[Unit]
+Description=Monitor Logs Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/pi/clean_log.sh
+
+[Install]
+WantedBy=multi-user.target
